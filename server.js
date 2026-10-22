@@ -5,7 +5,7 @@ const { randomUUID, randomInt } = require('node:crypto');
 const { WebSocketServer, WebSocket } = require('ws');
 
 const PORT = Number(process.env.PORT || 8080);
-const HOST = process.env.HOST || '127.0.0.1';
+const HOST = process.env.HOST || '0.0.0.0';
 const MAX_PLAYERS = 4;
 const MAX_MESSAGE_BYTES = 4096;
 const MAX_MESSAGES_PER_WINDOW = 30;
