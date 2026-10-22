@@ -1248,17 +1248,17 @@
 					</button>
 					<button class="mode-card" id="play-friends-button" type="button">
 						<span class="mode-card-icon" aria-hidden="true">👥</span>
-						<span class="mode-card-copy"><strong>بازی آنلاین با دوستان</strong><small>ساخت اتاق و دعوت با کد · نیازمند اتصال به سرور</small></span>
+						<span class="mode-card-copy"><strong>بازی آنلاین با دوستان</strong><small>ساخت اتاق یا ورود با کد دعوت</small></span>
 						<span class="mode-card-arrow" aria-hidden="true">←</span>
 					</button>
 					<button class="mode-card" id="play-random-button" type="button">
 						<span class="mode-card-icon" aria-hidden="true">🌐</span>
-						<span class="mode-card-copy"><strong>مسابقه با بازیکنان تصادفی</strong><small>پیداکردن حریف آنلاین · نیازمند اتصال به سرور</small></span>
+						<span class="mode-card-copy"><strong>مسابقه با بازیکنان تصادفی</strong><small>پیداکردن بازیکنان آنلاین</small></span>
 						<span class="mode-card-arrow" aria-hidden="true">←</span>
 					</button>
 					<details class="online-roadmap">
 						<summary>وضعیت اتصال آنلاین</summary>
-						<p>برای بازی آنلاین یک سرور WebSocket لازم است. سرور اختصاصی هنوز ساخته یا میزبانی نشده؛ این دکمه‌ها به‌جای نمایش الکی «به‌زودی»، وضعیت اتصال را صریح نشان می‌دهند.</p>
+						<p>برای اتصال از همین دستگاه، سرور محلی باید در حال اجرا باشد. برای بازی از دستگاه‌های دیگر، سرور باید روی شبکه یا اینترنت میزبانی شود.</p>
 					</details>
 				</section>
 				<section class="cosmetic-panel" aria-labelledby="cosmetic-heading">
@@ -1507,8 +1507,34 @@
 				<li><strong>ساخت خانه:</strong> دست‌کم دو شهر هم‌رنگ داشته باش؛ ساخت باید متوازن باشد و اجاره را بالا می‌برد.</li>
 			</ul>
 			<h3>دو حالت آنلاین</h3>
-			<p>حالت دوستان به سرور، اتاق و دعوت نیاز دارد؛ حالت تصادفی به سرور مسابقه‌یابی و پشتیبانی از قطع‌و‌وصل. این نسخه آفلاین است و این زیرساخت هنوز به پروژه وصل نشده؛ توضیح مراحل را در صفحه‌ی شروع ببین.</p>
+			<p>برای مود دوستان، یک اتاق بساز و کد را بفرست؛ برای مود تصادفی، حریفان با صف آنلاین پیدا می‌شوند. بازی آنلاین به اجرای سرور WebSocket نیاز دارد. این نسخه همگام‌سازی نوبت، تاس، خرید شهر، اجاره و گفت‌وگو را پشتیبانی می‌کند.</p>
 			<div class="info-dialog-actions"><button class="action-button" id="help-close-button" type="button">فهمیدم</button></div>
+		</div>
+	</dialog>
+	<dialog class="info-dialog" id="online-dialog" aria-labelledby="online-title">
+		<form class="info-dialog-inner" id="online-form">
+			<h2 id="online-title">بازی آنلاین با دوستان</h2>
+			<p>یک اتاق بساز و کدش را برای دوستت بفرست، یا کد اتاقی را که داری وارد کن.</p>
+			<label class="economy-field" for="online-room-code">کد اتاق (برای ورود)
+				<input class="economy-input" id="online-room-code" name="roomCode" maxlength="4" autocomplete="off" placeholder="مثلاً A2BC">
+			</label>
+			<div class="info-dialog-actions" style="justify-content:space-between;gap:8px">
+				<button class="action-button secondary" id="online-cancel-button" type="button">بازگشت</button>
+				<button class="action-button" id="online-join-button" type="button">ورود به اتاق</button>
+				<button class="action-button primary" id="online-create-button" type="button">ساخت اتاق</button>
+			</div>
+		</form>
+	</dialog>
+	<dialog class="info-dialog" id="lobby-dialog" aria-labelledby="lobby-title">
+		<div class="info-dialog-inner">
+			<h2 id="lobby-title">اتاق انتظار</h2>
+			<p>کد اتاق را برای دوستت بفرست:</p>
+			<p id="lobby-room-code" style="font-size:24px;font-weight:900;letter-spacing:.12em;text-align:center"></p>
+			<p id="lobby-players" aria-live="polite"></p>
+			<div class="info-dialog-actions" style="justify-content:space-between;gap:8px">
+				<button class="action-button secondary" id="lobby-leave-button" type="button">خروج از اتاق</button>
+				<button class="action-button primary" id="lobby-start-button" type="button">شروع بازی</button>
+			</div>
 		</div>
 	</dialog>
 	<div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -1806,6 +1832,230 @@
 			let movingPlayerId = null;
 			let dealHighlightTimer = null;
 			let aiActionTimer = null;
+			let onlineSocket = null;
+			let onlinePlayerId = null;
+			let onlineRoomCode = null;
+			let onlineMode = false;
+			let onlineMatchmaking = false;
+			let onlineRollTimer = null;
+			const onlineDialog = document.getElementById('online-dialog');
+			const onlineForm = document.getElementById('online-form');
+			const lobbyDialog = document.getElementById('lobby-dialog');
+			const onlineRoomCodeInput = document.getElementById('online-room-code');
+
+			function onlineUrl() {
+				if (window.location.protocol === 'https:') return `wss://${window.location.host}`;
+				if (window.location.protocol === 'http:') return `ws://${window.location.host}`;
+				return 'ws://127.0.0.1:8080';
+			}
+
+			function sendOnline(message) {
+				if (!onlineSocket || onlineSocket.readyState !== WebSocket.OPEN) {
+					showToast('اتصال به سرور قطع است؛ دوباره تلاش کن.');
+					return false;
+				}
+				onlineSocket.send(JSON.stringify(message));
+				return true;
+			}
+
+			function connectOnline() {
+				if (onlineSocket?.readyState === WebSocket.OPEN) return Promise.resolve();
+				if (onlineSocket?.readyState === WebSocket.CONNECTING) {
+					return new Promise((resolve, reject) => {
+						onlineSocket.addEventListener('open', resolve, { once: true });
+						onlineSocket.addEventListener('error', reject, { once: true });
+					});
+				}
+				return new Promise((resolve, reject) => {
+					const socket = new WebSocket(onlineUrl());
+					onlineSocket = socket;
+					socket.addEventListener('open', () => resolve(), { once: true });
+					socket.addEventListener('error', () => reject(new Error('اتصال به سرور برقرار نشد.')), { once: true });
+					socket.addEventListener('message', (event) => {
+						let message;
+						try {
+							message = JSON.parse(event.data);
+						} catch (error) {
+							showToast('پیام نامعتبر از سرور دریافت شد.');
+							return;
+						}
+						handleOnlineMessage(message);
+					});
+					socket.addEventListener('close', () => {
+						if (onlineSocket !== socket) return;
+						onlineSocket = null;
+						window.clearInterval(onlineRollTimer);
+						if (onlineMode) {
+							onlineMode = false;
+							showToast('اتصال بازی آنلاین قطع شد.');
+							render();
+						}
+					});
+				});
+			}
+
+			function syncOnlineRoom(room) {
+				if (!room || !Array.isArray(room.players)) return;
+				onlineRoomCode = room.code;
+				onlineMode = room.started;
+				document.getElementById('lobby-room-code').textContent = room.code;
+				document.getElementById('lobby-players').textContent = `بازیکنان (${fa.format(room.players.length)}/۴): ${room.players.map((player) => player.username).join('، ')}`;
+				const localPlayer = room.players.find((player) => player.id === onlinePlayerId);
+				const isHost = Boolean(localPlayer?.isHost);
+				document.getElementById('lobby-start-button').hidden = room.started || !isHost;
+				document.getElementById('lobby-start-button').disabled = room.players.length < 2;
+				if (!room.started) {
+					if (onlineMatchmaking) {
+						document.getElementById('lobby-title').textContent = 'در انتظار حریف‌ها';
+						document.getElementById('lobby-start-button').hidden = true;
+					} else {
+						document.getElementById('lobby-title').textContent = 'اتاق انتظار';
+					}
+					if (!lobbyDialog.open) lobbyDialog.showModal();
+					return;
+				}
+
+				window.clearTimeout(aiActionTimer);
+				onlineMatchmaking = false;
+				if (lobbyDialog.open) lobbyDialog.close();
+				landingScreen.hidden = true;
+				gameApp.hidden = false;
+				document.getElementById('wallet-hud').hidden = false;
+				players.forEach((player, index) => {
+					const remote = room.players[index];
+					player.isAI = false;
+					player.bankrupt = !remote;
+					player.houses = {};
+					if (!remote) return;
+					player.networkId = remote.id;
+					player.name = remote.username;
+					player.role = remote.id === onlinePlayerId ? 'شما · آنلاین' : 'آنلاین';
+					player.position = remote.position;
+					player.money = remote.money;
+					player.properties = Array.isArray(remote.properties) ? remote.properties : [];
+					player.jailed = Boolean(remote.jailed);
+				});
+				const activeIndex = players.findIndex((player) => player.networkId === room.activePlayerId);
+				if (activeIndex >= 0) state.active = activeIndex;
+				state.started = true;
+				state.phase = room.phase;
+				state.round = room.turnNumber || 1;
+				state.offeredProperty = Number.isInteger(room.offeredProperty) ? room.offeredProperty : null;
+				state.lastRoll = room.lastRoll || state.lastRoll;
+				render();
+			}
+
+			function handleOnlineMessage(message) {
+				switch (message.type) {
+					case 'connected':
+						return;
+					case 'room_created':
+					case 'room_joined':
+					case 'matchmaking':
+						onlineRoomCode = message.roomCode;
+						onlinePlayerId = message.playerId;
+						onlineMatchmaking = message.type === 'matchmaking';
+						return;
+					case 'room_state':
+						syncOnlineRoom(message.room);
+						return;
+					case 'game_started':
+						syncOnlineRoom(message.room);
+						showToast('بازی آنلاین شروع شد!', true);
+						return;
+					case 'dice_rolled': {
+						const player = players.find((entry) => entry.networkId === message.playerId);
+						if (!player) return;
+						window.clearInterval(onlineRollTimer);
+						diceElement.classList.remove('rolling');
+						if (message.roll === null) {
+							player.jailed = false;
+							state.phase = 'end';
+							state.active = players.indexOf(player);
+							setMessage(`${player.name} این نوبت در زندان ماند و آزاد شد.`);
+							log(`${player.name} یک نوبت در زندان ماند.`);
+							render();
+							return;
+						}
+						state.lastRoll = message.roll;
+						setDiceFace(message.roll);
+						document.getElementById('dice-total').textContent = fa.format(message.roll);
+						player.position = message.position;
+						player.money = message.money;
+						state.offeredProperty = message.landing?.type === 'purchase_offer' ? message.landing.spaceIndex : null;
+						state.phase = state.offeredProperty === null ? 'end' : 'buy';
+						const activeIndex = players.indexOf(player);
+						if (activeIndex >= 0) state.active = activeIndex;
+						if (message.passedStart) setMessage(`${player.name} از شروع گذشت و $۲۰۰ گرفت.`);
+						else if (message.landing?.type === 'purchase_offer') setMessage(`${message.landing.name} قابل خرید است؛ قیمت ${formatMoney(message.landing.price)}.`);
+						else if (message.landing?.type === 'rent_paid') setMessage(`${player.name} بابت ${message.landing.name}، ${formatMoney(message.landing.amount)} اجاره داد.`);
+						else if (message.landing?.type === 'tax_paid') setMessage(`${player.name} ${formatMoney(message.landing.amount)} مالیات پرداخت کرد.`);
+						else if (message.landing?.type === 'chance') setMessage(`کارت شانس: ${message.landing.amount >= 0 ? `${formatMoney(message.landing.amount)} گرفتی.` : `${formatMoney(Math.abs(message.landing.amount))} پرداخت کردی.`}`);
+						else if (message.landing?.type === 'sent_to_jail') setMessage(`${player.name} به زندان رفت و نوبت بعد را از دست می‌دهد.`);
+						else setMessage(`${player.name} به خانه‌ی ${fa.format(message.position)} رسید.`);
+						playSound('land');
+						log(`${player.name} با تاس ${fa.format(message.roll)} حرکت کرد.`);
+						render();
+						return;
+					}
+					case 'property_purchased': {
+						const player = players.find((entry) => entry.networkId === message.playerId);
+						if (!player) return;
+						log(`${player.name} ${message.name} را با ${formatMoney(message.price)} خرید.`);
+						showToast(`${message.name} به ${player.name} رسید.`, true);
+						return;
+					}
+					case 'purchase_skipped':
+						return;
+					case 'turn_changed': {
+						const nextPlayer = players.find((player) => player.networkId === message.activePlayerId);
+						if (nextPlayer) {
+							state.active = players.indexOf(nextPlayer);
+							state.phase = 'roll';
+							state.round = message.turnNumber;
+							state.offeredProperty = null;
+							setMessage(`نوبت ${nextPlayer.name} است.`);
+							render();
+						}
+						return;
+					}
+					case 'chat': {
+						const player = players.find((entry) => entry.networkId === message.playerId) || { name: message.username, id: message.playerId, skinId: 'bead' };
+						addChatMessage(player, message.text);
+						return;
+					}
+					case 'player_joined':
+					case 'player_left':
+						return;
+					case 'left_room':
+						onlineRoomCode = null;
+						onlinePlayerId = null;
+						onlineMode = false;
+						onlineMatchmaking = false;
+						if (lobbyDialog.open) lobbyDialog.close();
+						return;
+					case 'error':
+						showToast(message.message || 'درخواست آنلاین انجام نشد.');
+						return;
+					default:
+						showToast('پیام ناشناخته از سرور دریافت شد.');
+				}
+			}
+
+			async function beginOnlineAction(type, extra = {}) {
+				try {
+					await connectOnline();
+					if (!usernameLocked) {
+						profileDialog.showModal();
+						usernameInput.focus();
+						return;
+					}
+					onlineMatchmaking = type === 'find_match';
+					sendOnline({ type, username: players[0].name, ...extra });
+				} catch (error) {
+					showToast('سرور محلی در دسترس نیست. npm start را در پوشه‌ی بازی اجرا کن.');
+				}
+			}
 
 			function playSound(type) {
 				if (!soundEnabled || !audioContextClass) return;
@@ -1923,6 +2173,10 @@
 				event.preventDefault();
 				const text = chatInput.value.trim();
 				if (!text) return;
+				if (onlineMode) {
+					if (sendOnline({ type: 'chat', text })) chatInput.value = '';
+					return;
+				}
 				addChatMessage(currentPlayer(), text);
 				chatInput.value = '';
 				playSound('click');
@@ -2328,7 +2582,7 @@
 				const propertyHouseCount = space.type === 'property' && owner ? houseCount(owner, index) : 0;
 				houseStat.hidden = space.type !== 'property';
 				document.getElementById('property-house-count').textContent = `${fa.format(propertyHouseCount)} از ۴`;
-				const canManageHouses = space.type === 'property' && owner === currentPlayer() && Boolean(space.group);
+				const canManageHouses = !onlineMode && space.type === 'property' && owner === currentPlayer() && Boolean(space.group);
 				buildButton.hidden = !canManageHouses;
 				houseTip.hidden = !canManageHouses;
 				if (canManageHouses) {
@@ -2391,7 +2645,7 @@
 					tile.querySelectorAll('.owner-dot, .piece-stack, .house-indicator').forEach((node) => node.remove());
 				});
 
-				players.forEach((player) => {
+				(onlineMode ? players.filter((player) => !player.bankrupt) : players).forEach((player) => {
 					if (player.bankrupt) return;
 					const tile = board.querySelector(`[data-index="${player.position}"]`);
 					if (!tile) return;
@@ -2441,7 +2695,8 @@
 				topRow.replaceChildren();
 				bottomRow.replaceChildren();
 				[topRow, bottomRow].forEach((row, rowIndex) => {
-					const rowPlayers = rowIndex === 0 ? players.slice(0, 2) : players.slice(2).reverse();
+					const activePlayers = onlineMode ? players.filter((player) => !player.bankrupt) : players;
+					const rowPlayers = rowIndex === 0 ? activePlayers.slice(0, 2) : activePlayers.slice(2).reverse();
 					rowPlayers.forEach((player) => {
 						const isActive = state.phase !== 'ended' && currentPlayer().id === player.id;
 						const skin = skinForPlayer(player);
@@ -2489,7 +2744,7 @@
 				else turnLabel.dataset.player = player.id;
 				const playerList = document.getElementById('player-list');
 				playerList.replaceChildren();
-				players.forEach((entry) => {
+				(onlineMode ? players.filter((entry) => !entry.bankrupt) : players).forEach((entry) => {
 					const card = document.createElement('div');
 					card.className = `opponent${state.phase !== 'ended' && entry.id === player.id ? ' is-active-turn' : ''}`;
 					card.dataset.playerId = entry.id;
@@ -2538,17 +2793,17 @@
 				renderBoard();
 				const activePlayer = currentPlayer();
 				const canManageEconomy = ['roll', 'buy', 'end'].includes(state.phase) && !activePlayer.bankrupt;
-				document.getElementById('transfer-open-button').disabled = !canManageEconomy || activePlayer.money < 1 || players.filter((entry) => entry.id !== activePlayer.id && !entry.bankrupt).length === 0;
-				document.getElementById('trade-open-button').disabled = !canManageEconomy || !players.some((entry) => entry.id !== activePlayer.id && !entry.bankrupt && entry.properties.length > 0);
+				document.getElementById('transfer-open-button').disabled = onlineMode || !canManageEconomy || activePlayer.money < 1 || players.filter((entry) => entry.id !== activePlayer.id && !entry.bankrupt).length === 0;
+				document.getElementById('trade-open-button').disabled = onlineMode || !canManageEconomy || !players.some((entry) => entry.id !== activePlayer.id && !entry.bankrupt && entry.properties.length > 0);
 				rollButton.textContent = state.started ? '🎲　تاس بنداز' : '🎲　شروع بازی';
-				rollButton.disabled = state.phase !== 'roll' || activePlayer.bankrupt || activePlayer.isAI;
+				rollButton.disabled = state.phase !== 'roll' || activePlayer.bankrupt || activePlayer.isAI || (onlineMode && activePlayer.networkId !== onlinePlayerId);
 				setButtonVisibility(rollButton, state.phase === 'roll');
 				setButtonVisibility(buyButton, state.phase === 'buy');
-				buyButton.disabled = activePlayer.isAI || (state.phase === 'buy' && state.offeredProperty !== null && activePlayer.money < spaces[state.offeredProperty].price);
+				buyButton.disabled = activePlayer.isAI || (onlineMode && activePlayer.networkId !== onlinePlayerId) || (state.phase === 'buy' && state.offeredProperty !== null && activePlayer.money < spaces[state.offeredProperty].price);
 				setButtonVisibility(skipButton, state.phase === 'buy');
-				skipButton.disabled = activePlayer.isAI;
+				skipButton.disabled = activePlayer.isAI || (onlineMode && activePlayer.networkId !== onlinePlayerId);
 				setButtonVisibility(endButton, state.phase === 'end');
-				endButton.disabled = activePlayer.isAI;
+				endButton.disabled = activePlayer.isAI || (onlineMode && activePlayer.networkId !== onlinePlayerId);
 				setButtonVisibility(restartButton, state.phase === 'ended');
 				if (state.phase === 'buy' && state.offeredProperty !== null) {
 					const property = spaces[state.offeredProperty];
@@ -2974,6 +3229,23 @@
 
 			function rollDice(isAutomated = false) {
 				if (state.phase !== 'roll' || currentPlayer().isAI !== isAutomated) return;
+				if (onlineMode) {
+					if (currentPlayer().networkId !== onlinePlayerId) return;
+					state.started = true;
+					state.phase = 'moving';
+					playSound('dice');
+					diceElement.classList.add('rolling');
+					onlineRollTimer = window.setInterval(() => setDiceFace(Math.ceil(Math.random() * 6)), 80);
+					if (!sendOnline({ type: 'roll_dice' })) {
+						window.clearInterval(onlineRollTimer);
+						diceElement.classList.remove('rolling');
+						state.phase = 'roll';
+						render();
+					} else {
+						render();
+					}
+					return;
+				}
 				state.started = true;
 				playSound('dice');
 				const player = currentPlayer();
@@ -3010,6 +3282,10 @@
 
 			function endTurn(isAutomated = false) {
 				if (state.phase === 'ended' || currentPlayer().isAI !== isAutomated) return;
+				if (onlineMode) {
+					if (currentPlayer().networkId === onlinePlayerId) sendOnline({ type: 'end_turn' });
+					return;
+				}
 				playSound('turn');
 				const previousActive = state.active;
 				let nextActive = (state.active + 1) % players.length;
@@ -3026,6 +3302,10 @@
 
 			function buyProperty(isAutomated = false) {
 				if (state.phase !== 'buy' || state.offeredProperty === null || currentPlayer().isAI !== isAutomated) return;
+				if (onlineMode) {
+					if (currentPlayer().networkId === onlinePlayerId) sendOnline({ type: 'buy_property', spaceIndex: state.offeredProperty });
+					return;
+				}
 				const player = currentPlayer();
 				const index = state.offeredProperty;
 				const property = spaces[index];
@@ -3049,6 +3329,10 @@
 
 			function skipPurchase(isAutomated = false) {
 				if (state.phase !== 'buy' || currentPlayer().isAI !== isAutomated) return;
+				if (onlineMode) {
+					if (currentPlayer().networkId === onlinePlayerId) sendOnline({ type: 'skip_purchase' });
+					return;
+				}
 				playSound('click');
 				const property = spaces[state.offeredProperty];
 				log(`${currentPlayer().name} از خرید ${property.name} گذشت.`);
@@ -3092,6 +3376,22 @@
 
 			function openLanding() {
 				window.clearTimeout(aiActionTimer);
+				if (onlineRoomCode) {
+					sendOnline({ type: 'leave_room' });
+					onlineMode = false;
+					onlineMatchmaking = false;
+					onlineRoomCode = null;
+					onlinePlayerId = null;
+					players.forEach((player) => {
+						delete player.networkId;
+						player.bankrupt = false;
+						player.money = 800;
+						player.position = 0;
+						player.properties = [];
+						player.houses = {};
+					});
+					render();
+				}
 				landingContinueButton.hidden = gameApp.hidden;
 				landingScreen.hidden = false;
 				renderCosmeticStore();
@@ -3099,6 +3399,12 @@
 
 			function startAIMatch() {
 				window.clearTimeout(aiActionTimer);
+				onlineMode = false;
+				onlineMatchmaking = false;
+				players.forEach((player) => {
+					delete player.networkId;
+					player.bankrupt = false;
+				});
 				players.forEach((player, index) => {
 					player.isAI = index > 0;
 					player.name = index === 0 ? player.name : `هوش مصنوعی ${fa.format(index)}`;
@@ -3132,6 +3438,55 @@
 				startAIMatch();
 			});
 			document.getElementById('landing-continue-button').addEventListener('click', continueGame);
+			document.getElementById('play-friends-button').addEventListener('click', () => {
+				if (!usernameLocked) {
+					profileDialog.showModal();
+					usernameInput.focus();
+					return;
+				}
+				onlineRoomCodeInput.value = '';
+				onlineDialog.showModal();
+			});
+			document.getElementById('play-random-button').addEventListener('click', () => beginOnlineAction('find_match'));
+			document.getElementById('online-create-button').addEventListener('click', () => {
+				onlineDialog.close();
+				beginOnlineAction('create_room');
+			});
+			document.getElementById('online-join-button').addEventListener('click', () => {
+				const roomCode = onlineRoomCodeInput.value.trim().toUpperCase();
+				if (!/^[A-HJ-NP-Z2-9]{4}$/.test(roomCode)) {
+					onlineRoomCodeInput.setCustomValidity('کد اتاق باید چهار نویسه باشد.');
+					onlineRoomCodeInput.reportValidity();
+					return;
+				}
+				onlineRoomCodeInput.setCustomValidity('');
+				onlineDialog.close();
+				beginOnlineAction('join_room', { roomCode });
+			});
+			onlineRoomCodeInput.addEventListener('input', () => onlineRoomCodeInput.setCustomValidity(''));
+			document.getElementById('online-cancel-button').addEventListener('click', () => onlineDialog.close());
+			onlineForm.addEventListener('submit', (event) => event.preventDefault());
+			onlineDialog.addEventListener('cancel', () => {
+				if (!onlineMode && onlineRoomCode) sendOnline({ type: 'leave_room' });
+			});
+			document.getElementById('lobby-start-button').addEventListener('click', () => sendOnline({ type: 'start_game' }));
+			document.getElementById('lobby-leave-button').addEventListener('click', () => {
+				sendOnline({ type: 'leave_room' });
+				onlineMode = false;
+				onlineMatchmaking = false;
+				onlineRoomCode = null;
+				onlinePlayerId = null;
+				lobbyDialog.close();
+			});
+			lobbyDialog.addEventListener('cancel', (event) => {
+				event.preventDefault();
+				sendOnline({ type: 'leave_room' });
+				onlineMode = false;
+				onlineMatchmaking = false;
+				onlineRoomCode = null;
+				onlinePlayerId = null;
+				lobbyDialog.close();
+			});
 			document.getElementById('token-kind-tab').addEventListener('click', () => {
 				cosmeticKind = 'token';
 				renderCosmeticStore();
@@ -3139,12 +3494,6 @@
 			document.getElementById('dice-kind-tab').addEventListener('click', () => {
 				cosmeticKind = 'dice';
 				renderCosmeticStore();
-			});
-			['play-friends-button', 'play-random-button'].forEach((id) => {
-				document.getElementById(id).addEventListener('click', () => {
-					document.querySelector('.online-roadmap').open = true;
-					showToast('اتصال سرور آنلاین هنوز پیکربندی نشده است.');
-				});
 			});
 			document.getElementById('return-menu-button').addEventListener('click', openLanding);
 			const helpDialog = document.getElementById('help-dialog');
