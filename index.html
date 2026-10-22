@@ -1,0 +1,3266 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="theme-color" content="#ffffff">
+	<title>Monopl | بازی خرید و اجاره‌ی شهرها</title>
+	<style>
+		:root {
+			color-scheme: dark;
+			font-family: Tahoma, "Segoe UI", sans-serif;
+			background: #081b1c;
+			color: #f4f3e8;
+			font-synthesis: none;
+			text-rendering: optimizeLegibility;
+			-webkit-font-smoothing: antialiased;
+			-moz-osx-font-smoothing: grayscale;
+			--ink: #f4f3e8;
+			--muted: #9bb4aa;
+			--gold: #e8c77a;
+			--teal: #76ddbd;
+			--panel: rgba(17, 43, 40, .9);
+			--panel-border: rgba(206, 224, 189, .16);
+			--page-text: #f4f3e8;
+			--surface-text: #f4f3e8;
+			--glass-fill: rgba(17, 43, 40, .78);
+			--glass-edge: rgba(220, 238, 226, .24);
+		}
+		.space:focus-visible { z-index: 4; outline: 3px solid #2d8d74; outline-offset: -3px; }
+
+		* { box-sizing: border-box; }
+
+		body {
+			--page-bg: #071719;
+			position: relative;
+			min-width: 320px;
+			min-height: 100vh;
+			margin: 0;
+			padding: 82px 18px 16px;
+			overflow-x: hidden;
+			background:
+				radial-gradient(ellipse at 7% 0%, rgba(192, 146, 73, .14), transparent 34rem),
+				radial-gradient(ellipse at 95% 78%, rgba(43, 150, 127, .16), transparent 38rem),
+				linear-gradient(145deg, #09191b, #102a29 58%, #071719);
+			color: var(--page-text);
+			transition: background-color .55s ease, color .45s ease;
+		}
+
+		body[data-theme="light"] {
+			color-scheme: light;
+			--page-text: #173432;
+			--surface-text: #173432;
+			--ink: #173432;
+			--muted: #55716c;
+			--gold: #9a6b16;
+			--teal: #167f71;
+			--panel: rgba(255, 255, 255, .72);
+			--panel-border: rgba(42, 94, 83, .2);
+			--glass-fill: rgba(255, 255, 255, .72);
+			--glass-edge: rgba(255, 255, 255, .88);
+			background:
+				radial-gradient(ellipse at 7% 0%, rgba(255, 205, 117, .28), transparent 34rem),
+				radial-gradient(ellipse at 95% 78%, rgba(96, 208, 184, .25), transparent 38rem),
+				linear-gradient(145deg, #eff8f6, #e8f1f4 58%, #f7f3e8);
+		}
+
+		body::before,
+		body::after {
+			position: fixed;
+			z-index: 0;
+			width: min(68vw, 700px);
+			aspect-ratio: 1;
+			border-radius: 50%;
+			content: "";
+			filter: blur(10px);
+			pointer-events: none;
+			will-change: transform;
+		}
+
+		body[data-theme="light"]::before { background: radial-gradient(circle, rgba(117, 146, 255, .2), transparent 68%); }
+		body[data-theme="light"]::after { background: radial-gradient(circle, rgba(61, 190, 158, .18), transparent 68%); }
+
+		body::before {
+			top: -32%;
+			left: -22%;
+			background: radial-gradient(circle, rgba(111, 127, 255, .25), transparent 68%);
+			animation: ambient-drift 24s ease-in-out infinite alternate;
+		}
+
+		body::after {
+			right: -24%;
+			bottom: -45%;
+			background: radial-gradient(circle, rgba(61, 218, 182, .19), transparent 68%);
+			animation: ambient-drift 30s ease-in-out infinite alternate-reverse;
+		}
+
+		button { font: inherit; }
+		button:focus-visible { outline: 3px solid #f2d68e; outline-offset: 3px; }
+
+		.app {
+			position: relative;
+			z-index: 1;
+			width: min(1320px, 100%);
+			margin: 0 auto;
+			animation: page-in .6s ease both;
+		}
+
+		.wallet-hud {
+			position: fixed;
+			z-index: 20;
+			top: 12px;
+			right: 14px;
+			display: flex;
+			min-width: 142px;
+			align-items: center;
+			gap: 10px;
+			padding: 8px 13px;
+			border: 1px solid rgba(226,237,220,.25);
+			border-radius: 15px;
+			background: linear-gradient(135deg,rgba(20,53,48,.94),rgba(14,38,39,.9));
+			box-shadow: 0 8px 26px rgba(0,0,0,.23),inset 0 1px rgba(255,255,255,.18);
+			color: #fff3c8;
+			backdrop-filter: blur(18px) saturate(150%);
+			-webkit-backdrop-filter: blur(18px) saturate(150%);
+			animation: wallet-enter .55s cubic-bezier(.2,.8,.2,1) both;
+			transition: background .4s ease,color .35s ease,border-color .4s ease,box-shadow .4s ease;
+		}
+		.wallet-icon { display: grid; width: 29px; height: 29px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(255,224,150,.32); border-radius: 10px; background: linear-gradient(145deg,rgba(255,222,145,.23),rgba(255,255,255,.06)); color: #ffe09b; font-size: 15px; }
+		.wallet-caption { display: block; margin-bottom: 1px; color: rgba(238,244,232,.68); font-size: 9px; }
+		.wallet-amount { display: block; direction: ltr; text-align: left; color: #ffe2a0; font-size: 16px; font-weight: 900; font-variant-numeric: tabular-nums; white-space: nowrap; }
+		.wallet-amount.value-update { animation: wallet-pop .45s cubic-bezier(.2,.8,.2,1); }
+		.wallet-coin { display: flex; align-items: center; gap: 4px; margin-inline-start: 4px; padding-inline-start: 8px; border-inline-start: 1px solid rgba(154,107,22,.2); color: #a87518; font-size: 11px; font-weight: 900; }
+		.wallet-coin strong { font-variant-numeric: tabular-nums; }
+		body[data-theme="light"] .wallet-hud { border-color: rgba(54,111,96,.22); background: linear-gradient(135deg,rgba(255,255,255,.94),rgba(231,247,240,.93)); box-shadow: 0 8px 26px rgba(43,93,81,.15),inset 0 1px #fff; color: #214a40; }
+		body[data-theme="light"] .wallet-icon { border-color: rgba(166,120,35,.23); background: linear-gradient(145deg,#fff2cc,#f8e5b1); color: #916319; }
+		body[data-theme="light"] .wallet-caption { color: #637c70; }
+		body[data-theme="light"] .wallet-amount { color: #825c18; }
+
+		.topbar {
+			position: relative;
+			overflow: hidden;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			margin-bottom: 14px;
+			padding: 11px 14px;
+			border: 1px solid rgba(226, 237, 220, .18);
+			border-radius: 21px;
+			background: linear-gradient(130deg, rgba(255,255,255,.14), rgba(255,255,255,.035) 58%, rgba(255,255,255,.07));
+			box-shadow: inset 0 1px rgba(255,255,255,.19), 0 14px 40px rgba(0,0,0,.15);
+			backdrop-filter: blur(22px) saturate(150%);
+			-webkit-backdrop-filter: blur(22px) saturate(150%);
+			animation: panel-enter .7s cubic-bezier(.2,.8,.2,1) both;
+		}
+
+		.topbar::after {
+			position: absolute;
+			top: -80%;
+			left: -25%;
+			width: 34%;
+			height: 260%;
+			transform: rotate(25deg);
+			background: linear-gradient(90deg, transparent, rgba(255,255,255,.11), transparent);
+			content: "";
+			pointer-events: none;
+			animation: header-sheen 9s ease-in-out 1s infinite;
+		}
+
+		.brand { position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+		.brand-icon {
+			display: grid;
+			width: 40px;
+			height: 40px;
+			place-items: center;
+			border: 1px solid rgba(255, 231, 177, .48);
+			border-radius: 15px;
+			background: linear-gradient(145deg, rgba(255, 221, 148, .23), rgba(255, 255, 255, .04));
+			box-shadow: inset 0 1px rgba(255,255,255,.24), 0 8px 26px rgba(0,0,0,.2);
+			color: #f3d58e;
+			font-size: 24px;
+		}
+
+		.brand h1 { margin: 0; font-size: 20px; letter-spacing: -.04em; }
+		.brand h1 span { display: inline-block; animation: title-letter .7s cubic-bezier(.2,.8,.2,1) both; }
+		.brand p { margin: 4px 0 0; color: var(--muted); font-size: 10px; animation: soft-reveal .7s ease .25s both; }
+		.top-actions { position: relative; z-index: 1; display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; }
+		.edition {
+			position: relative;
+			z-index: 1;
+			padding: 8px 12px;
+			border: 1px solid rgba(220,238,226,.28);
+			border-radius: 999px;
+			background: rgba(255,255,255,.065);
+			color: #dfe8dc;
+			font-size: 11px;
+			box-shadow: inset 0 1px rgba(255,255,255,.12);
+			animation: soft-reveal .7s ease .35s both;
+		}
+		.skin-button {
+			display: inline-flex;
+			min-height: 36px;
+			align-items: center;
+			justify-content: center;
+			gap: 6px;
+			padding: 6px 11px;
+			border: 1px solid rgba(226,237,220,.22);
+			border-radius: 12px;
+			background: rgba(255,255,255,.07);
+			box-shadow: inset 0 1px rgba(255,255,255,.12);
+			color: var(--ink);
+			font-size: 11px;
+			font-weight: 700;
+			cursor: pointer;
+			transition: transform .22s ease, background .3s ease, border-color .3s ease;
+		}
+		.skin-button:hover { transform: translateY(-2px); border-color: rgba(118,221,189,.55); background: rgba(118,221,189,.13); }
+		.skin-preview { font-size: 16px; line-height: 1; }
+		.profile-button { display: inline-flex; min-height: 36px; align-items: center; justify-content: center; gap: 6px; padding: 6px 10px; border: 1px solid rgba(226,237,220,.22); border-radius: 12px; background: rgba(255,255,255,.07); box-shadow: inset 0 1px rgba(255,255,255,.12); color: var(--ink); font-size: 11px; font-weight: 700; cursor: pointer; transition: transform .22s ease,background .3s ease,border-color .3s ease; }
+		.profile-button:hover { transform: translateY(-2px); border-color: rgba(118,221,189,.55); background: rgba(118,221,189,.13); }
+		body[data-theme="light"] .profile-button { border-color: rgba(52,105,93,.18); background: rgba(255,255,255,.58); color: #315b53; }
+		.sound-toggle { display: grid; width: 36px; height: 36px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(226,237,220,.22); border-radius: 12px; background: rgba(255,255,255,.07); box-shadow: inset 0 1px rgba(255,255,255,.12); color: var(--ink); font-size: 16px; cursor: pointer; transition: transform .2s ease,background .25s ease,border-color .25s ease; }
+		.sound-toggle:hover { transform: translateY(-2px); border-color: rgba(118,221,189,.55); background: rgba(118,221,189,.13); }
+		.sound-toggle[aria-pressed="false"] { opacity: .67; }
+		body[data-theme="light"] .sound-toggle { border-color: rgba(52,105,93,.18); background: rgba(255,255,255,.58); color: #315b53; }
+		.action-buttons.toolbar-actions { display: flex; flex: 1 1 195px; align-items: center; justify-content: flex-end; gap: 7px; }
+		.toolbar-actions .action-button { min-height: 36px; padding: 6px 12px; white-space: nowrap; }
+		.toolbar-actions .action-button.primary { min-width: 168px; }
+		.toolbar-actions .wide { grid-column: auto; }
+		#buy-button { border-color: rgba(118,221,189,.48); background: linear-gradient(145deg,rgba(118,221,189,.2),rgba(118,221,189,.08)); color: #a7f0d4; }
+		#end-button { border-color: rgba(232,199,122,.4); }
+		#restart-button { border-color: rgba(118,221,189,.45); background: rgba(118,221,189,.14); color: #a7f0d4; }
+		.skin-dialog {
+			width: min(590px, calc(100vw - 28px));
+			max-width: none;
+			padding: 0;
+			overflow: hidden;
+			border: 1px solid rgba(220,238,226,.27);
+			border-radius: 22px;
+			background: rgba(13,35,33,.94);
+			box-shadow: 0 28px 90px rgba(0,0,0,.48), inset 0 1px rgba(255,255,255,.14);
+			color: var(--ink);
+			backdrop-filter: blur(25px);
+		}
+		.skin-dialog[open] { animation: dialog-enter .3s cubic-bezier(.2,.8,.2,1) both; }
+		.skin-dialog::backdrop { background: rgba(3,15,17,.58); backdrop-filter: blur(7px); }
+		.skin-dialog-inner { padding: 20px; }
+		.skin-grid { max-height: min(62vh, 540px); overflow: auto; padding: 3px 4px 8px; scrollbar-color: rgba(118,221,189,.55) transparent; }
+		.skin-dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+		.skin-dialog-title { margin: 0; font-size: 18px; font-weight: 900; }
+		.skin-dialog-copy { margin: 6px 0 0; color: var(--muted); font-size: 11px; line-height: 1.7; }
+		.skin-close { display: grid; width: 32px; height: 32px; place-items: center; border: 1px solid rgba(255,255,255,.17); border-radius: 10px; background: rgba(255,255,255,.07); color: var(--ink); font-size: 18px; cursor: pointer; }
+		.skin-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 9px; }
+		.skin-option { position: relative; display: grid; min-height: 102px; place-items: center; gap: 6px; padding: 9px 5px; overflow: hidden; border: 1px solid rgba(255,255,255,.13); border-radius: 17px; background: linear-gradient(145deg,rgba(255,255,255,.1),rgba(255,255,255,.025)); color: var(--ink); cursor: pointer; transition: transform .24s cubic-bezier(.2,.8,.2,1),background .3s ease,border-color .3s ease,box-shadow .3s ease; }
+		.skin-option::before { position: absolute; top: -70%; left: -55%; width: 55%; height: 240%; transform: rotate(25deg); background: linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent); content: ""; transition: left .45s ease; pointer-events: none; }
+		.skin-option:hover { transform: translateY(-4px) scale(1.025); border-color: color-mix(in srgb,var(--skin-color),white 45%); background: linear-gradient(145deg,color-mix(in srgb,var(--skin-color),transparent 78%),rgba(255,255,255,.055)); box-shadow: 0 9px 22px rgba(0,0,0,.2),0 0 18px color-mix(in srgb,var(--skin-color),transparent 65%); }
+		.skin-option:hover::before { left: 130%; }
+		.skin-option[aria-pressed="true"] { border-color: color-mix(in srgb,var(--skin-color),white 35%); background: linear-gradient(145deg,color-mix(in srgb,var(--skin-color),transparent 70%),rgba(255,255,255,.07)); box-shadow: 0 0 0 2px color-mix(in srgb,var(--skin-color),transparent 75%),0 8px 20px rgba(0,0,0,.18); }
+		.skin-option[aria-pressed="true"] .skin-option-icon { animation: skin-selected .8s cubic-bezier(.2,.8,.2,1) both; }
+		.skin-option-icon { position: relative; display: grid; width: 54px; height: 54px; place-items: center; border: 2px solid rgba(255,255,255,.8); border-radius: 18px; background: radial-gradient(circle at 30% 22%,rgba(255,255,255,.72),transparent 32%),linear-gradient(145deg,color-mix(in srgb,var(--skin-color),white 28%),var(--skin-color) 58%,color-mix(in srgb,var(--skin-color),black 28%)); box-shadow: 0 7px 17px color-mix(in srgb,var(--skin-color),transparent 62%),inset 0 1px rgba(255,255,255,.58),inset 0 -4px 8px rgba(0,0,0,.18); font-size: 31px; transition: transform .3s cubic-bezier(.2,.8,.2,1),filter .3s ease; }
+		.skin-option:hover .skin-option-icon { transform: rotate(-8deg) scale(1.12); filter: saturate(1.2); }
+		.skin-option-name { z-index: 1; font-size: 11px; font-weight: 800; }
+		.economy-panel { padding: 15px; animation-delay: .3s; }
+		.economy-heading { display: flex; align-items: center; gap: 9px; margin-bottom: 5px; }
+		.economy-heading-icon { display: grid; width: 32px; height: 32px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(232,199,122,.35); border-radius: 11px; background: linear-gradient(145deg,rgba(232,199,122,.2),rgba(255,255,255,.04)); font-size: 16px; }
+		.economy-title { margin: 0; color: var(--ink); font-size: 13px; font-weight: 900; }
+		.economy-copy { margin: 0 0 12px; color: var(--muted); font-size: 10px; line-height: 1.7; }
+		.economy-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+		.economy-button { display: grid; min-height: 68px; align-content: center; justify-items: center; gap: 4px; padding: 8px; border: 1px solid rgba(118,221,189,.28); border-radius: 13px; background: linear-gradient(145deg,rgba(118,221,189,.13),rgba(255,255,255,.035)); color: var(--ink); cursor: pointer; transition: transform .22s ease,border-color .25s ease,box-shadow .25s ease,background .25s ease,opacity .2s ease; }
+		.economy-button:hover:not(:disabled) { transform: translateY(-3px); border-color: rgba(118,221,189,.72); box-shadow: 0 8px 20px rgba(0,0,0,.18),0 0 15px rgba(118,221,189,.13); }
+		.economy-button:disabled { cursor: not-allowed; opacity: .42; }
+		.economy-button-icon { font-size: 21px; line-height: 1; }
+		.economy-button-label { font-size: 10px; font-weight: 800; }
+		.economy-dialog { width: min(450px,calc(100vw - 28px)); max-width: none; padding: 0; overflow: hidden; border: 1px solid rgba(220,238,226,.27); border-radius: 22px; background: rgba(13,35,33,.96); box-shadow: 0 28px 90px rgba(0,0,0,.48),inset 0 1px rgba(255,255,255,.14); color: var(--ink); backdrop-filter: blur(25px); }
+		.economy-dialog[open] { animation: dialog-enter .3s cubic-bezier(.2,.8,.2,1) both; }
+		.economy-dialog::backdrop { background: rgba(3,15,17,.6); backdrop-filter: blur(8px); }
+		.economy-dialog-inner { padding: 20px; }
+		.economy-dialog-title { display: flex; align-items: center; gap: 9px; margin: 0; font-size: 18px; font-weight: 900; }
+		.economy-dialog-copy { margin: 7px 0 16px; color: var(--muted); font-size: 11px; line-height: 1.8; }
+		.economy-field { display: grid; gap: 6px; color: var(--muted); font-size: 11px; font-weight: 700; }
+		.economy-input { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid rgba(220,238,226,.2); border-radius: 11px; outline: none; background: rgba(255,255,255,.07); color: var(--ink); font: inherit; font-size: 14px; }
+		.economy-input:focus { border-color: rgba(118,221,189,.75); box-shadow: 0 0 0 3px rgba(118,221,189,.14); }
+		.economy-input option { background: #173432; color: #f4f3e8; }
+		.economy-summary { margin: 11px 0 0; padding: 10px 12px; border: 1px solid rgba(118,221,189,.2); border-radius: 11px; background: rgba(118,221,189,.075); color: var(--ink); font-size: 11px; line-height: 1.75; }
+		.economy-summary[data-state="error"] { border-color: rgba(238,131,111,.42); background: rgba(238,131,111,.09); color: #ffb8a9; }
+		.economy-summary[data-state="success"] { border-color: rgba(118,221,189,.55); background: rgba(118,221,189,.14); color: #b4f5d8; }
+		.economy-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 15px; }
+		.economy-dialog-actions .action-button { min-width: 100px; }
+		.chat-panel { display: grid; min-height: 310px; grid-template-rows: auto minmax(105px,1fr) auto auto; gap: 9px; padding: 13px; }
+		.chat-heading { display: flex; align-items: center; gap: 8px; }
+		.chat-heading-icon { display: grid; width: 30px; height: 30px; place-items: center; border: 1px solid rgba(118,221,189,.26); border-radius: 10px; background: rgba(118,221,189,.1); }
+		.chat-title { margin: 0; color: var(--ink); font-size: 13px; font-weight: 900; }
+		.chat-note { margin: 2px 0 0; color: var(--muted); font-size: 9px; }
+		.chat-messages { display: flex; min-height: 95px; max-height: 230px; flex-direction: column; gap: 7px; overflow-y: auto; padding: 4px; }
+		.chat-empty { margin: auto; color: var(--muted); font-size: 10px; text-align: center; }
+		.chat-message { max-width: 92%; align-self: flex-start; padding: 7px 9px; border: 1px solid color-mix(in srgb,var(--chat-color),transparent 68%); border-radius: 11px 11px 11px 3px; background: color-mix(in srgb,var(--chat-color),transparent 89%); color: var(--ink); animation: soft-reveal .2s ease both; }
+		.chat-message-head { display: flex; align-items: center; gap: 5px; margin-bottom: 3px; color: var(--chat-color); font-size: 9px; font-weight: 900; }
+		.chat-message-text { overflow-wrap: anywhere; font-size: 11px; line-height: 1.6; }
+		.chat-emojis { display: flex; flex-wrap: wrap; gap: 4px; }
+		.chat-emoji { display: grid; width: 31px; height: 30px; place-items: center; border: 1px solid var(--panel-border); border-radius: 9px; background: rgba(255,255,255,.06); color: var(--ink); font-size: 16px; cursor: pointer; transition: transform .18s ease,background .18s ease; }
+		.chat-emoji:hover { transform: translateY(-2px); background: rgba(118,221,189,.16); }
+		.chat-form { display: flex; gap: 6px; }
+		.chat-input { width: 100%; min-width: 0; min-height: 38px; padding: 8px 10px; border: 1px solid var(--panel-border); border-radius: 10px; outline: none; background: rgba(255,255,255,.07); color: var(--ink); font: inherit; font-size: 11px; }
+		.chat-input:focus { border-color: rgba(118,221,189,.7); box-shadow: 0 0 0 3px rgba(118,221,189,.12); }
+		.chat-send { flex: 0 0 auto; padding-inline: 12px; border: 1px solid rgba(118,221,189,.35); border-radius: 10px; background: linear-gradient(140deg,rgba(118,221,189,.25),rgba(118,221,189,.12)); color: var(--ink); font-size: 11px; font-weight: 800; cursor: pointer; }
+		body[data-theme="light"] .chat-title { color: #1d403a; }
+		body[data-theme="light"] .chat-message { background: color-mix(in srgb,var(--chat-color),white 91%); color: #173432; }
+		body[data-theme="light"] .chat-emoji { background: rgba(255,255,255,.62); }
+		body[data-theme="light"] .chat-input { border-color: rgba(49,103,91,.18); background: rgba(255,255,255,.78); color: #173432; }
+		body[data-theme="light"] .chat-send { border-color: rgba(22,127,113,.3); background: linear-gradient(140deg,rgba(105,214,178,.34),rgba(255,255,255,.7)); color: #244b42; }
+		body[data-theme="light"] .economy-panel { border-color: rgba(53,107,94,.2); background: linear-gradient(145deg,rgba(255,255,255,.85),rgba(255,255,255,.58)),var(--panel); box-shadow: 0 16px 40px rgba(46,87,78,.13),inset 0 1px #fff; }
+		body[data-theme="light"] .economy-title { color: #1d403a; }
+		body[data-theme="light"] .economy-button { border-color: rgba(22,127,113,.22); background: linear-gradient(145deg,rgba(105,214,178,.2),rgba(255,255,255,.72)); color: #244b42; }
+		body[data-theme="light"] .economy-button:hover:not(:disabled) { border-color: rgba(22,127,113,.58); box-shadow: 0 8px 18px rgba(43,93,81,.13); }
+		body[data-theme="light"] .economy-dialog { border-color: rgba(49,103,91,.23); background: rgba(248,255,252,.98); box-shadow: 0 28px 90px rgba(37,82,72,.28),inset 0 1px #fff; }
+		body[data-theme="light"] .economy-dialog::backdrop { background: rgba(30,65,59,.3); }
+		body[data-theme="light"] .economy-input { border-color: rgba(49,103,91,.18); background: rgba(255,255,255,.82); color: #173432; }
+		body[data-theme="light"] .economy-input option { background: #fff; color: #173432; }
+		body[data-theme="light"] .economy-summary { border-color: rgba(22,127,113,.2); background: rgba(105,214,178,.12); color: #244b42; }
+		body[data-theme="light"] .economy-summary[data-state="error"] { border-color: rgba(190,88,69,.35); background: rgba(238,131,111,.11); color: #8a3528; }
+		body[data-theme="light"] .economy-summary[data-state="success"] { border-color: rgba(22,127,113,.4); background: rgba(105,214,178,.2); color: #155a49; }
+		.profile-dialog { width: min(420px,calc(100vw - 28px)); max-width: none; max-height: calc(100vh - 28px); padding: 0; overflow-y: auto; border: 1px solid rgba(220,238,226,.27); border-radius: 22px; background: rgba(13,35,33,.95); box-shadow: 0 28px 90px rgba(0,0,0,.48),inset 0 1px rgba(255,255,255,.14); color: var(--ink); backdrop-filter: blur(25px); }
+		.profile-dialog[open] { animation: dialog-enter .3s cubic-bezier(.2,.8,.2,1) both; }
+		.profile-dialog::backdrop { background: rgba(3,15,17,.58); backdrop-filter: blur(7px); }
+		.profile-dialog-inner { padding: 20px; }
+		.profile-heading { margin: 0; font-size: 18px; font-weight: 900; }
+		.profile-copy { margin: 6px 0 16px; color: var(--muted); font-size: 11px; line-height: 1.8; }
+		.profile-fields { display: grid; gap: 12px; }
+		.profile-field { display: grid; gap: 6px; color: var(--muted); font-size: 11px; font-weight: 700; }
+		.profile-input { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid rgba(220,238,226,.2); border-radius: 11px; outline: none; background: rgba(255,255,255,.07); color: var(--ink); font: inherit; font-size: 13px; }
+		.profile-input:focus { border-color: rgba(118,221,189,.75); box-shadow: 0 0 0 3px rgba(118,221,189,.14); }
+		.profile-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+		.profile-dialog-actions .action-button { min-width: 94px; }
+		body[data-theme="light"] .profile-dialog { border-color: rgba(49,103,91,.23); background: rgba(248,255,252,.97); box-shadow: 0 28px 90px rgba(37,82,72,.28),inset 0 1px #fff; }
+		body[data-theme="light"] .profile-dialog::backdrop { background: rgba(30,65,59,.28); }
+		body[data-theme="light"] .profile-input { border-color: rgba(49,103,91,.18); background: rgba(255,255,255,.78); color: #173432; }
+		.theme-switch {
+			display: inline-flex;
+			gap: 2px;
+			padding: 3px;
+			border: 1px solid rgba(226,237,220,.2);
+			border-radius: 14px;
+			background: rgba(2,16,17,.22);
+			box-shadow: inset 0 1px rgba(255,255,255,.09);
+			animation: soft-reveal .7s ease .45s both;
+		}
+		.theme-button {
+			display: inline-flex;
+			min-height: 30px;
+			align-items: center;
+			justify-content: center;
+			gap: 6px;
+			padding: 5px 8px;
+			border: 1px solid transparent;
+			border-radius: 10px;
+			background: transparent;
+			color: #c3d3cb;
+			font-size: 11px;
+			font-weight: 700;
+			cursor: pointer;
+			transition: color .25s ease, background .3s ease, transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s ease;
+		}
+		.theme-button:hover { transform: translateY(-1px); color: #fff; }
+		.theme-button[aria-pressed="true"] {
+			border-color: rgba(232,199,122,.35);
+			background: linear-gradient(145deg, rgba(232,199,122,.25), rgba(232,199,122,.1));
+			box-shadow: 0 3px 12px rgba(0,0,0,.16), inset 0 1px rgba(255,255,255,.14);
+			color: #ffe3a3;
+		}
+		.theme-icon { font-size: 14px; line-height: 1; }
+
+		.layout {
+			display: grid;
+			grid-template-columns: minmax(0, 1.65fr) minmax(255px, .5fr);
+			align-items: start;
+			gap: 18px;
+		}
+
+		.board-frame {
+			position: relative;
+			overflow: hidden;
+			padding: clamp(8px, 1.6vw, 15px);
+			border: 1px solid rgba(218, 228, 209, .24);
+			border-radius: 27px;
+			background:
+				linear-gradient(145deg, rgba(255,255,255,.19), rgba(255,255,255,.035) 34%, rgba(255,255,255,.07)),
+				rgba(18, 43, 40, .66);
+			box-shadow: 0 26px 80px rgba(0,0,0,.34), inset 0 1px rgba(255,255,255,.24), 0 0 55px rgba(90, 181, 153, .08);
+			backdrop-filter: blur(26px) saturate(140%);
+			-webkit-backdrop-filter: blur(26px) saturate(140%);
+			animation: panel-enter .8s cubic-bezier(.2,.8,.2,1) .08s both;
+		}
+		.board-player-corners { display: flex; direction: ltr; align-items: center; justify-content: space-between; gap: 12px; padding: 2px 2px 10px; }
+		.board-player-corners.bottom { padding: 10px 2px 2px; }
+		.board-corner-player { display: flex; width: min(42%, 230px); min-width: 0; align-items: center; gap: 9px; padding: 8px 11px; border: 1px solid color-mix(in srgb,var(--player-color),transparent 56%); border-radius: 15px; background: linear-gradient(135deg,color-mix(in srgb,var(--player-color),transparent 82%),rgba(255,255,255,.045)); box-shadow: inset 0 1px rgba(255,255,255,.1),0 5px 16px rgba(0,0,0,.1); color: var(--ink); direction: rtl; transition: transform .3s ease,border-color .3s ease,box-shadow .3s ease,background .3s ease; }
+		.board-corner-player.is-turn { transform: translateY(-2px); border-color: color-mix(in srgb,var(--player-color),white 28%); background: linear-gradient(135deg,color-mix(in srgb,var(--player-color),transparent 66%),rgba(255,255,255,.09)); box-shadow: 0 0 0 2px color-mix(in srgb,var(--player-color),transparent 76%),0 7px 22px color-mix(in srgb,var(--player-color),transparent 76%),inset 0 1px rgba(255,255,255,.2); }
+		.board-corner-avatar { display: grid; width: 33px; height: 33px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(255,255,255,.7); border-radius: 11px; background: radial-gradient(circle at 30% 22%,rgba(255,255,255,.55),transparent 42%),linear-gradient(145deg,color-mix(in srgb,var(--player-color),white 20%),var(--player-color)); box-shadow: 0 3px 10px color-mix(in srgb,var(--player-color),transparent 65%),inset 0 1px rgba(255,255,255,.55); font-size: 18px; }
+		.board-corner-copy { display: grid; min-width: 0; gap: 2px; }
+		.board-corner-name { overflow: hidden; font-size: 12px; font-weight: 900; text-overflow: ellipsis; white-space: nowrap; }
+		.board-corner-status { color: var(--muted); font-size: 9px; font-weight: 700; }
+		.board-corner-player.is-turn .board-corner-status { color: var(--player-color); }
+		.board-corner-balance { margin-inline-start: auto; color: var(--gold); direction: ltr; font-size: 11px; font-weight: 900; white-space: nowrap; }
+		body[data-theme="light"] .board-corner-player { border-color: color-mix(in srgb,var(--player-color),transparent 67%); background: linear-gradient(135deg,color-mix(in srgb,var(--player-color),transparent 88%),rgba(255,255,255,.85)); box-shadow: inset 0 1px #fff,0 5px 16px rgba(43,93,81,.09); }
+		body[data-theme="light"] .board-corner-player.is-turn { border-color: color-mix(in srgb,var(--player-color),#173432 24%); background: linear-gradient(135deg,color-mix(in srgb,var(--player-color),transparent 76%),rgba(255,255,255,.94)); box-shadow: 0 0 0 2px color-mix(in srgb,var(--player-color),transparent 83%),0 7px 22px color-mix(in srgb,var(--player-color),transparent 82%),inset 0 1px #fff; }
+		body[data-theme="light"] .board-corner-status { color: #55716c; }
+		body[data-theme="light"] .board-corner-balance { color: #825c18; }
+
+		.board-frame::before {
+			position: absolute;
+			inset: 0 18% auto;
+			height: 1px;
+			background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
+			content: "";
+			pointer-events: none;
+		}
+
+		.board {
+			position: relative;
+			overflow: hidden;
+			display: grid;
+			width: 100%;
+			aspect-ratio: 1;
+			grid-template-columns: 1.25fr repeat(7, minmax(0, 1fr)) 1.25fr;
+			grid-template-rows: 1.25fr repeat(6, minmax(0, 1fr)) 1.25fr;
+			gap: 3px;
+			padding: 5px;
+			border: 1px solid rgba(255, 247, 218, .72);
+			border-radius: 18px;
+			background:
+				linear-gradient(145deg, #e9e1c7, #d4c9a8),
+				#d9d1b3;
+			box-shadow: inset 0 0 0 3px rgba(103, 79, 42, .18), inset 0 1px rgba(255,255,255,.75), 0 8px 26px rgba(0,0,0,.28);
+			direction: ltr;
+		}
+
+		.space {
+			position: relative;
+			display: flex;
+			min-width: 0;
+			min-height: 0;
+			flex-direction: column;
+			align-items: center;
+			justify-content: space-between;
+			overflow: hidden;
+			padding: 4px 3px 3px;
+			border: 1px solid rgba(83, 71, 48, .24);
+			border-radius: 6px;
+			background: linear-gradient(145deg, #fffdf4, #e8e1ca);
+			color: #27332e;
+			text-align: center;
+			direction: rtl;
+			cursor: pointer;
+			box-shadow: inset 0 1px rgba(255,255,255,.92), 0 1px 2px rgba(76,66,43,.12);
+			transition: transform .22s cubic-bezier(.2,.8,.2,1), box-shadow .22s ease, filter .22s ease;
+			animation: tile-enter .48s cubic-bezier(.2,.8,.2,1) both;
+			animation-delay: calc(var(--tile-index, 0) * 12ms + 180ms);
+			will-change: transform, opacity;
+		}
+
+		.space::after {
+			position: absolute;
+			right: -10px;
+			bottom: -10px;
+			width: 28px;
+			height: 28px;
+			border: 1px solid rgba(79, 68, 49, .11);
+			border-radius: 50%;
+			background: radial-gradient(circle, rgba(255,255,255,.28), transparent 70%);
+			content: "";
+			pointer-events: none;
+		}
+
+		.space:hover {
+			z-index: 3;
+			transform: translateY(-2px) scale(1.06);
+			box-shadow: inset 0 1px rgba(255,255,255,.95), 0 5px 13px rgba(41,52,42,.25);
+			filter: saturate(1.12);
+		}
+
+		.space-name {
+			z-index: 1;
+			display: -webkit-box;
+			max-width: 100%;
+			overflow: hidden;
+			font-size: clamp(10px, 1vw, 13px);
+			font-weight: 700;
+			line-height: 1.3;
+			-webkit-box-orient: vertical;
+			-webkit-line-clamp: 2;
+		}
+
+		.space-icon {
+			z-index: 1;
+			font-size: clamp(17px, 2.35vw, 26px);
+			line-height: 1;
+		}
+
+		.space-value {
+			z-index: 1;
+			direction: ltr;
+			color: #697268;
+			font-size: clamp(9px, .84vw, 11px);
+			font-variant-numeric: tabular-nums;
+			white-space: nowrap;
+		}
+		.space-photo { position: absolute; z-index: 0; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .48; mix-blend-mode: multiply; pointer-events: none; }
+		.space.has-photo { background: linear-gradient(180deg,rgba(255,251,232,.16),rgba(255,248,223,.84) 42%,#f5eedb); }
+		.space.has-photo::after { inset: 30% 0 0; width: auto; height: auto; border: 0; border-radius: 0; background: linear-gradient(180deg,transparent,rgba(255,250,235,.9)); }
+		.space.has-photo .space-icon,
+		.space.has-photo .space-name,
+		.space.has-photo .space-value { position: relative; z-index: 3; text-shadow: 0 1px 3px rgba(255,255,255,.9); }
+
+		.property-band {
+			position: absolute;
+			inset: 0 0 auto;
+			height: 8px;
+			box-shadow: inset 0 -1px rgba(0,0,0,.12), 0 2px 4px rgba(0,0,0,.12);
+		}
+		.space.corner { border-radius: 8px; }
+		.space.corner .space-icon { max-width: 100%; margin-top: 1px; }
+		.space.special { background: linear-gradient(145deg, #f8f3df, #e1d9bd); }
+		.space.start { background: linear-gradient(145deg, #f8edc9, #e5cb87); }
+		.space.jail { background: linear-gradient(145deg, #f3e0c8, #dcb690); }
+		.space.visiting { background: linear-gradient(145deg, #f8f3df, #e5ddc4); }
+		.space.tax { background: linear-gradient(145deg, #f7e4d7, #e3c1ad); }
+		.space.chance { background: linear-gradient(145deg, #e7e7f8, #c9cce6); }
+		.space.station { background: linear-gradient(145deg, #e5eee7, #c4d5ca); }
+		.space.company-utility { background: linear-gradient(145deg,#e4f3f6,#b7dbe1); }
+		.space.company-railway { background: linear-gradient(145deg,#f2ebdc,#d8c8a7); }
+		.space.company-airline { background: linear-gradient(145deg,#e7e9f6,#c4cbe9); }
+		.space.group-coast:not(.has-photo) { background: linear-gradient(145deg,#e7f4ef,#bddbd1); }
+		.space.group-cyan:not(.has-photo) { background: linear-gradient(145deg,#e6f3f6,#bfdee3); }
+		.space.group-orange:not(.has-photo) { background: linear-gradient(145deg,#fbeddc,#eed0ad); }
+		.space.group-red:not(.has-photo) { background: linear-gradient(145deg,#f8e4df,#eabbb1); }
+		.space.group-yellow:not(.has-photo) { background: linear-gradient(145deg,#f8f2d7,#e9d993); }
+		.space.group-green:not(.has-photo) { background: linear-gradient(145deg,#e6f0df,#c2d7b0); }
+		.space.group-blue:not(.has-photo) { background: linear-gradient(145deg,#e7ecf8,#c4cde7); }
+		.space.group-purple:not(.has-photo) { background: linear-gradient(145deg,#f0e9f5,#d8c7e5); }
+		.space.active-space {
+			z-index: 2;
+			transform: scale(1.055);
+			box-shadow: 0 0 0 2px #f4d37f, 0 0 22px rgba(245, 199, 91, .8), inset 0 1px rgba(255,255,255,.95);
+			filter: brightness(1.08);
+			animation: landing-glow .9s ease-out;
+		}
+
+		.owner-dot {
+			position: absolute;
+			z-index: 3;
+			top: 10px;
+			left: 4px;
+			width: 11px;
+			height: 11px;
+			border: 2px solid #fff;
+			border-radius: 50%;
+			box-shadow: 0 1px 4px rgba(0,0,0,.4), 0 0 0 3px rgba(255,255,255,.35);
+			animation: owner-pop .35s cubic-bezier(.2,.8,.2,1) both;
+		}
+		.house-indicator { position: absolute; z-index: 3; top: 10px; right: 2px; padding: 1px 3px; border: 1px solid rgba(255,255,255,.72); border-radius: 6px; background: rgba(25,63,51,.86); color: #fff2bd; font-size: 9px; font-weight: 900; line-height: 1.2; }
+
+		.piece-stack {
+			position: absolute;
+			z-index: 4;
+			right: 3px;
+			bottom: 12px;
+			display: flex;
+			gap: 1px;
+		}
+
+		.piece {
+			display: grid;
+			width: 20px;
+			height: 20px;
+			place-items: center;
+			border: 1px solid rgba(255,255,255,.94);
+			border-radius: 50%;
+			box-shadow: 0 2px 5px rgba(0,0,0,.32);
+			color: #fff;
+			font-size: 12px;
+			font-weight: 800;
+			animation: token-arrive .45s cubic-bezier(.2,.8,.2,1) both;
+		}
+		.space.movement-step { z-index: 4; }
+		.space.movement-step::before { position: absolute; inset: 3px; border: 2px solid rgba(38,157,127,.85); border-radius: inherit; content: ""; pointer-events: none; animation: step-ripple .3s ease-out both; }
+		.piece.is-moving { animation: token-hop .26s cubic-bezier(.34,1.56,.64,1) both; box-shadow: 0 4px 10px rgba(0,0,0,.38),0 0 12px rgba(68,210,173,.85); }
+
+		.board-center {
+			position: relative;
+			display: flex;
+			grid-area: 2 / 2 / 8 / 9;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+			overflow: hidden;
+			border: 1px solid rgba(95, 91, 65, .3);
+			border-radius: 7px;
+			background:
+				radial-gradient(ellipse at 50% 45%, rgba(255,255,246,.99), rgba(231,232,211,.97) 67%, rgba(216,224,202,.95)),
+				#e5dfc2;
+			color: #42554a;
+			text-align: center;
+			box-shadow: inset 0 1px rgba(255,255,255,.85), inset 0 0 55px rgba(138,150,116,.16);
+		}
+
+		.board-center::before,
+		.board-center::after {
+			position: absolute;
+			width: 74%;
+			aspect-ratio: 1;
+			border: 1px solid rgba(94, 133, 107, .14);
+			border-radius: 50%;
+			content: "";
+			pointer-events: none;
+		}
+
+		.board-center::after { width: 56%; }
+		.center-kicker { margin: 0; color: #718178; font-size: clamp(8px, .85vw, 11px); letter-spacing: .14em; animation: soft-reveal .65s ease .35s both; }
+		.center-title { margin: 0; color: #25584a; font-size: clamp(22px, 3.7vw, 42px); font-weight: 900; letter-spacing: -.04em; text-shadow: 0 2px rgba(255,255,255,.65), 0 8px 22px rgba(47,100,80,.15); animation: title-letter .7s cubic-bezier(.2,.8,.2,1) .2s both; }
+		.center-subtitle { margin: 0; color: #788273; font-size: clamp(8px, .9vw, 11px); animation: soft-reveal .7s ease .4s both; }
+		.center-motif { margin: 0; color: #c29d57; font-size: 16px; letter-spacing: .25em; animation: motif-glow 3.2s ease-in-out infinite; }
+		.center-score { position: absolute; right: 12px; bottom: 10px; left: 12px; display: flex; justify-content: space-between; color: #596c60; font-size: 9px; }
+		.center-score strong { color: #285f50; }
+		.center-game { position: relative; z-index: 1; display: grid; width: min(76%, 430px); justify-items: center; gap: clamp(4px, 1vw, 10px); padding: clamp(12px, 2vw, 22px); border: 1px solid rgba(255,255,255,.7); border-radius: clamp(17px, 2vw, 25px); background: linear-gradient(145deg,rgba(255,255,255,.68),rgba(255,255,255,.29)); box-shadow: 0 14px 40px rgba(71,97,71,.12),inset 0 1px #fff; backdrop-filter: blur(8px); animation: center-card-enter .75s cubic-bezier(.2,.8,.2,1) .2s both; }
+		.center-game .center-title { font-size: clamp(22px,3.2vw,36px); }
+		.center-game .center-motif { font-size: clamp(12px,1.4vw,18px); }
+		.center-action-title { margin: 6px 0 0; color: #49685d; font-size: clamp(9px,1vw,12px); font-weight: 800; }
+		.center-dice-row { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: clamp(52px,6vw,72px); perspective: 420px; }
+		.center-die { --die-size: clamp(42px,5.2vw,58px); position: relative; display: block; width: var(--die-size); height: var(--die-size); transform: rotateX(0deg) rotateY(0deg); transform-style: preserve-3d; filter: drop-shadow(0 10px 7px rgba(27,79,66,.34)); transition: transform .48s cubic-bezier(.2,.8,.2,1); }
+		.center-die::after { position: absolute; z-index: -1; right: 12%; bottom: -8px; left: 12%; height: 9px; border-radius: 50%; background: rgba(28,73,61,.3); content: ""; filter: blur(5px); transform: rotateX(70deg); }
+		.die-face { position: absolute; inset: 0; display: grid; place-items: center; border: 2px solid var(--die-edge,#e2c77c); border-radius: 13px; background: radial-gradient(circle at 28% 20%,rgba(255,255,255,.98),transparent 36%),linear-gradient(145deg,var(--die-light,#f5fffc),var(--die-mid,#b9e3d3) 52%,var(--die-dark,#4e9a7e)); box-shadow: inset 0 2px 3px rgba(255,255,255,.92),inset 0 -5px 9px rgba(14,72,53,.3),0 2px 5px rgba(27,79,66,.24); color: var(--die-pip,#155c48); font-size: clamp(27px,3.2vw,40px); line-height: 1; backface-visibility: hidden; }
+		.die-face.front { transform: translateZ(calc(var(--die-size) / 2)); }
+		.die-face.back { transform: rotateY(180deg) translateZ(calc(var(--die-size) / 2)); }
+		.die-face.right { transform: rotateY(90deg) translateZ(calc(var(--die-size) / 2)); }
+		.die-face.left { transform: rotateY(-90deg) translateZ(calc(var(--die-size) / 2)); }
+		.die-face.top { transform: rotateX(90deg) translateZ(calc(var(--die-size) / 2)); }
+		.die-face.bottom { transform: rotateX(-90deg) translateZ(calc(var(--die-size) / 2)); }
+		.center-die.rolling { animation: dice-roll .48s ease-in-out infinite; filter: drop-shadow(0 14px 11px rgba(24,79,66,.42)) drop-shadow(0 0 10px rgba(232,199,122,.48)); }
+		.center-dice-total { min-width: 35px; color: #a47820; font-size: clamp(18px,2.2vw,25px); font-weight: 900; }
+		.center-message { min-height: 2.6em; max-width: 100%; margin: 0; color: #31564b; font-size: clamp(9px,1vw,13px); font-weight: 700; line-height: 1.8; }
+		.center-message .message-word { animation-duration: .38s; }
+		.property-dialog { width: min(410px,calc(100vw - 30px)); max-width: none; padding: 0; overflow: hidden; border: 1px solid rgba(220,238,226,.28); border-radius: 22px; background: rgba(13,35,33,.95); box-shadow: 0 28px 90px rgba(0,0,0,.48),inset 0 1px rgba(255,255,255,.14); color: var(--ink); backdrop-filter: blur(25px); }
+		.property-dialog[open] { animation: dialog-enter .28s cubic-bezier(.2,.8,.2,1) both; }
+		.property-dialog::backdrop { background: rgba(3,15,17,.58); backdrop-filter: blur(7px); }
+		.property-dialog-inner { padding: 20px; }
+		.property-photo { display: none; width: 100%; max-height: 230px; margin: 0 0 12px; border-radius: 14px; object-fit: cover; }
+		.property-photo.is-visible { display: block; }
+		.property-photo-credit { margin: -4px 0 12px; color: var(--muted); font-size: 9px; line-height: 1.6; }
+		.property-photo-credit a { color: var(--teal); }
+		.property-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+		.property-color { width: 8px; align-self: stretch; min-height: 50px; border-radius: 999px; box-shadow: 0 0 16px currentColor; }
+		.property-heading { flex: 1; }
+		.property-name { margin: 0; color: var(--ink); font-size: 19px; font-weight: 900; }
+		.property-kind { margin: 4px 0 0; color: var(--muted); font-size: 10px; }
+		.property-close { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid rgba(255,255,255,.17); border-radius: 10px; background: rgba(255,255,255,.07); color: var(--ink); font-size: 18px; cursor: pointer; }
+		.property-stats { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 9px; }
+		.property-stat { padding: 12px; border: 1px solid rgba(255,255,255,.12); border-radius: 14px; background: rgba(255,255,255,.055); }
+		.property-stat-label { display: block; margin-bottom: 5px; color: var(--muted); font-size: 10px; }
+		.property-stat-value { display: block; color: var(--gold); font-size: 16px; font-weight: 900; }
+		.property-status { margin: 12px 0 0; padding: 11px 12px; border-right: 3px solid var(--teal); border-radius: 6px 11px 11px 6px; background: rgba(118,221,189,.08); color: var(--ink); font-size: 11px; line-height: 1.75; }
+		.build-house-button { width: 100%; margin-top: 10px; }
+		.space.deal-complete { z-index: 5; animation: trade-pop .85s cubic-bezier(.2,.8,.2,1) both; }
+		.toast.celebration { border-color: rgba(232,199,122,.58); background: linear-gradient(135deg,rgba(42,75,58,.97),rgba(19,48,44,.97)); box-shadow: 0 12px 38px rgba(0,0,0,.32),0 0 22px rgba(232,199,122,.16); color: #ffe8ad; }
+		body[data-theme="light"] .center-game { border-color: rgba(255,255,255,.9); background: linear-gradient(145deg,rgba(255,255,255,.82),rgba(255,255,255,.43)); box-shadow: 0 14px 40px rgba(71,97,71,.1),inset 0 1px #fff; }
+		body[data-theme="light"] .center-action-title,body[data-theme="light"] .center-message { color: #31564b; }
+		body[data-theme="light"] .property-dialog { border-color: rgba(49,103,91,.23); background: rgba(248,255,252,.97); box-shadow: 0 28px 90px rgba(37,82,72,.28),inset 0 1px #fff; }
+		body[data-theme="light"] .property-dialog::backdrop { background: rgba(30,65,59,.28); }
+		body[data-theme="light"] .property-close { border-color: rgba(49,103,91,.15); background: rgba(255,255,255,.76); color: #31564e; }
+		body[data-theme="light"] .property-stat { border-color: rgba(49,103,91,.14); background: rgba(255,255,255,.7); }
+		body[data-theme="light"] .property-status { background: rgba(75,183,149,.1); color: #31564b; }
+		body[data-theme="light"] .toast.celebration { border-color: rgba(154,107,22,.4); background: linear-gradient(135deg,rgba(255,255,255,.98),rgba(239,249,241,.98)); box-shadow: 0 12px 38px rgba(43,93,81,.18),0 0 22px rgba(194,157,87,.14); color: #704d11; }
+
+		.panel {
+			position: relative;
+			overflow: hidden;
+			border: 1px solid var(--panel-border);
+			border-radius: 20px;
+			background: linear-gradient(145deg, rgba(255,255,255,.19), rgba(255,255,255,.055) 58%, rgba(255,255,255,.085)), var(--panel);
+			box-shadow: 0 18px 46px rgba(0,0,0,.23), inset 0 1px rgba(255,255,255,.2);
+			backdrop-filter: blur(24px) saturate(145%);
+			-webkit-backdrop-filter: blur(24px) saturate(145%);
+			animation: panel-enter .65s cubic-bezier(.2,.8,.2,1) both;
+		}
+
+		.panel::before {
+			position: absolute;
+			top: 0;
+			right: 16%;
+			left: 16%;
+			height: 1px;
+			background: linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent);
+			content: "";
+			pointer-events: none;
+		}
+
+		.sidebar { display: grid; gap: 12px; }
+		.turn-panel { padding: 16px; }
+		.turn-panel { animation-delay: .2s; }
+		.action-panel { animation-delay: .32s; }
+		.log-panel { animation-delay: .44s; }
+		.turn-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+		.turn-label { margin: 0; color: var(--gold); font-size: 14px; font-weight: 900; }
+		.turn-label[data-player]::before { display: inline-block; width: 8px; height: 8px; margin-inline-end: 7px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 12px currentColor; content: ""; vertical-align: 1px; }
+		.round-chip { padding: 5px 9px; border: 1px solid rgba(232,199,122,.28); border-radius: 999px; color: var(--gold); font-size: 10px; }
+		.active-player { display: flex; align-items: center; gap: 10px; margin-top: 13px; }
+		.avatar {
+			display: grid;
+			width: 42px;
+			height: 42px;
+			flex: 0 0 auto;
+			place-items: center;
+			border: 2px solid rgba(255,255,255,.8);
+			border-radius: 15px;
+			box-shadow: 0 5px 15px rgba(0,0,0,.18), inset 0 1px rgba(255,255,255,.62);
+			color: #10211f;
+			font-size: 19px;
+			transition: transform .25s ease, box-shadow .25s ease;
+		}
+		.active-player:hover .avatar { transform: rotate(-7deg) scale(1.06); box-shadow: 0 8px 20px rgba(0,0,0,.25), inset 0 1px rgba(255,255,255,.7); }
+		.player-name { margin: 0; font-size: 14px; font-weight: 800; }
+		.player-role { margin: 4px 0 0; color: var(--muted); font-size: 10px; }
+		.cash-line { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-top: 15px; padding-top: 12px; border-top: 1px solid rgba(218,232,207,.12); }
+		.cash-label { color: var(--muted); font-size: 12px; }
+		.cash-value { color: var(--gold); font-size: 25px; font-weight: 900; font-variant-numeric: tabular-nums; text-shadow: 0 2px 16px rgba(232,199,122,.2); }
+		.value-update { animation: value-update .42s cubic-bezier(.2,.8,.2,1); }
+		.cash-currency { color: #bdc4ad; font-size: 10px; }
+		.stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+		.stat-box { padding: 9px 10px; border: 1px solid rgba(218,232,207,.13); border-radius: 12px; background: linear-gradient(145deg, rgba(255,255,255,.065), rgba(255,255,255,.02)); box-shadow: inset 0 1px rgba(255,255,255,.07); transition: transform .2s ease, background .2s ease; }
+		.stat-box:hover { transform: translateY(-2px); background: rgba(255,255,255,.075); }
+		.stat-label { color: var(--muted); font-size: 10px; }
+		.stat-value { display: block; margin-top: 4px; color: var(--ink); font-size: 15px; font-weight: 800; }
+
+		.opponents { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+		#player-list { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+		.opponent { display: flex; align-items: center; gap: 7px; min-width: 0; padding: 8px; border: 1px solid rgba(218,232,207,.13); border-radius: 12px; background: linear-gradient(145deg, rgba(255,255,255,.06), rgba(255,255,255,.02)); transition: transform .2s ease, border-color .2s ease; }
+		.opponent:hover { transform: translateY(-2px); border-color: rgba(218,232,207,.24); }
+		.opponent.is-active-turn { border-color: rgba(118,221,189,.72); background: linear-gradient(145deg,rgba(118,221,189,.2),rgba(255,255,255,.045)); box-shadow: 0 0 0 2px rgba(118,221,189,.14),0 0 20px rgba(118,221,189,.15); }
+		.turn-flag { display: none; margin-top: 3px; color: var(--teal); font-size: 9px; font-weight: 900; }
+		.is-active-turn .turn-flag { display: block; }
+		.opponent-avatar { display: grid; width: 26px; height: 26px; flex: 0 0 auto; place-items: center; border-radius: 9px; color: #10211f; font-size: 13px; }
+		.opponent-name { overflow: hidden; color: #e4eee5; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+		.opponent-cash { margin-top: 3px; color: var(--gold); font-size: 9px; }
+
+		.action-panel { padding: 15px; }
+		.action-title { margin: 0 0 10px; color: var(--muted); font-size: 11px; }
+		.action-title { font-size: 13px; font-weight: 800; }
+		.dice-row { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 66px; }
+		.die {
+			display: grid;
+			width: 46px;
+			height: 46px;
+			place-items: center;
+			border: 1px solid rgba(255,255,255,.78);
+			border-radius: 13px;
+			background: linear-gradient(145deg, #fffdf4, #e8e1cf);
+			box-shadow: 0 7px 17px rgba(0,0,0,.25), inset 0 1px rgba(255,255,255,.95), inset 0 -2px 4px rgba(88,78,55,.1);
+			color: #285448;
+			font-size: 25px;
+			line-height: 1;
+			transition: box-shadow .2s ease;
+		}
+		.die.rolling { animation: dice-roll .48s ease-in-out; box-shadow: 0 10px 23px rgba(0,0,0,.3), 0 0 18px rgba(232,199,122,.16), inset 0 1px rgba(255,255,255,.95); }
+		.dice-total { min-width: 40px; color: var(--gold); font-size: 21px; font-weight: 900; transition: transform .25s ease, color .25s ease; }
+		.dice-total:not(:empty) { animation: number-pop .35s cubic-bezier(.2,.8,.2,1); }
+		.action-message { min-height: 42px; margin: 7px 0 12px; color: var(--ink); font-size: 13px; font-weight: 600; line-height: 1.9; text-align: center; transition: color .25s ease; }
+		.message-word { display: inline-block; animation: word-pop .48s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--word-index) * 35ms); }
+		.action-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+		.action-button {
+			min-height: 42px;
+			padding: 8px 10px;
+			border: 1px solid rgba(232,199,122,.48);
+			border-radius: 12px;
+			background: linear-gradient(145deg, rgba(255,225,159,.2), rgba(232,199,122,.065));
+			box-shadow: inset 0 1px rgba(255,255,255,.14), 0 6px 15px rgba(0,0,0,.12);
+			color: #ffe5a7;
+			font-size: 11px;
+			font-weight: 700;
+			cursor: pointer;
+			transition: transform .2s cubic-bezier(.2,.8,.2,1), filter .2s ease, opacity .2s ease, box-shadow .2s ease;
+		}
+		.action-button.primary {
+			position: relative;
+			overflow: hidden;
+			border-color: rgba(170,255,225,.56);
+			background: linear-gradient(115deg, #8fe8cb, #4fc7a5 58%, #32a88d);
+			box-shadow: 0 8px 24px rgba(48,190,151,.24), inset 0 1px rgba(255,255,255,.64);
+			color: #062d28;
+			font-size: 12px;
+			font-weight: 900;
+			animation: cta-breathe 3.4s ease-in-out infinite;
+		}
+		.action-button.primary::after {
+			position: absolute;
+			top: -40%;
+			left: -45%;
+			width: 28%;
+			height: 180%;
+			transform: rotate(25deg);
+			background: linear-gradient(90deg, transparent, rgba(255,255,255,.42), transparent);
+			content: "";
+			pointer-events: none;
+			animation: button-sheen 5.2s ease-in-out 1.2s infinite;
+		}
+		.action-button.primary:hover:not(:disabled) { box-shadow: 0 10px 30px rgba(48,190,151,.34), inset 0 1px rgba(255,255,255,.72); }
+		.action-button:hover:not(:disabled) { transform: translateY(-2px) scale(1.015); filter: brightness(1.15); box-shadow: inset 0 1px rgba(255,255,255,.2), 0 9px 21px rgba(0,0,0,.2); }
+		.action-button:active:not(:disabled) { transform: translateY(0) scale(.98); }
+		.action-button.secondary { border-color: rgba(222,237,218,.2); background: rgba(255,255,255,.075); color: #e0e8dc; }
+		.action-button:disabled { cursor: not-allowed; opacity: .38; }
+		.action-buttons .wide { grid-column: 1 / -1; }
+		.action-button .button-cost { display: block; margin-top: 3px; font-size: 9px; font-weight: 400; opacity: .78; }
+
+		.log-panel { padding: 14px; }
+		.log-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; }
+		.log-heading h2 { margin: 0; font-size: 12px; }
+		.log-heading span { color: var(--muted); font-size: 9px; }
+		.log-list { display: grid; max-height: 162px; gap: 6px; overflow: auto; padding: 0; margin: 0; list-style: none; scrollbar-color: #587268 transparent; }
+		.log-entry { padding: 8px 10px; border-right: 2px solid rgba(118,221,189,.65); border-radius: 5px 10px 10px 5px; background: linear-gradient(110deg, rgba(255,255,255,.065), rgba(255,255,255,.03)); color: #d4e0d7; font-size: 11px; line-height: 1.75; animation: log-enter .38s cubic-bezier(.2,.8,.2,1) both; }
+		.log-entry:first-child { border-right-color: var(--gold); color: #f1e3bc; }
+		.rules-note { margin: 10px 0 0; color: #819d92; font-size: 9px; line-height: 1.7; }
+		.toast {
+			position: fixed;
+			z-index: 10;
+			right: 50%;
+			bottom: 22px;
+			max-width: min(90vw, 440px);
+			padding: 11px 16px;
+			transform: translate(50%, 20px);
+			border: 1px solid rgba(255,255,255,.2);
+			border-radius: 13px;
+			background: rgba(13, 35, 33, .94);
+			box-shadow: 0 10px 35px rgba(0,0,0,.3);
+			color: #f6e8bd;
+			font-size: 12px;
+			opacity: 0;
+			pointer-events: none;
+			transition: opacity .25s ease, transform .25s ease;
+			backdrop-filter: blur(18px);
+		}
+		.toast.visible { transform: translate(50%, 0); opacity: 1; }
+
+		@keyframes page-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+		@keyframes panel-enter { from { opacity: 0; transform: translateY(15px) scale(.99); filter: blur(5px); } to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+		@keyframes tile-enter { from { opacity: 0; transform: translateY(7px) scale(.94); } to { opacity: 1; transform: translateY(0) scale(1); } }
+		@keyframes owner-pop { 0% { opacity: 0; transform: scale(.3); } 70% { transform: scale(1.25); } 100% { opacity: 1; transform: scale(1); } }
+		@keyframes token-arrive { 0% { opacity: 0; transform: translateY(-7px) scale(.5); } 70% { transform: translateY(1px) scale(1.15); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+		@keyframes word-pop { from { opacity: 0; transform: translateY(5px); filter: blur(3px); } to { opacity: 1; transform: translateY(0); filter: blur(0); } }
+		@keyframes number-pop { 0% { transform: scale(.75); } 65% { transform: scale(1.18); } 100% { transform: scale(1); } }
+		@keyframes value-update { 0% { transform: translateY(5px) scale(.92); opacity: .35; } 70% { transform: translateY(-1px) scale(1.06); opacity: 1; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+		@keyframes log-enter { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
+		@keyframes soft-reveal { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+		@keyframes title-letter { from { opacity: 0; transform: translateY(12px) rotateX(-40deg); filter: blur(4px); } to { opacity: 1; transform: translateY(0) rotateX(0); filter: blur(0); } }
+		@keyframes motif-glow { 0%, 100% { opacity: .7; text-shadow: 0 0 0 rgba(194,157,87,0); } 50% { opacity: 1; text-shadow: 0 0 14px rgba(194,157,87,.55); } }
+		@keyframes ambient-drift { from { transform: translate3d(-2vw, -2vh, 0) scale(.94); } to { transform: translate3d(7vw, 6vh, 0) scale(1.08); } }
+		@keyframes header-sheen { 0%, 15% { transform: translateX(0) rotate(25deg); opacity: 0; } 25% { opacity: 1; } 55%, 100% { transform: translateX(440%) rotate(25deg); opacity: 0; } }
+		@keyframes dice-roll {
+			0% { transform: rotateX(-22deg) rotateY(-28deg) scale(1); }
+			35% { transform: rotateX(150deg) rotateY(145deg) scale(1.15); }
+			70% { transform: rotateX(285deg) rotateY(295deg) scale(.92); }
+			100% { transform: rotateX(338deg) rotateY(332deg) scale(1); }
+		}
+		@keyframes landing-glow {
+			0% { transform: scale(.92); box-shadow: 0 0 0 0 rgba(245,199,91,0), inset 0 1px rgba(255,255,255,.95); }
+			55% { transform: scale(1.1); box-shadow: 0 0 0 3px #f4d37f, 0 0 28px rgba(245,199,91,.95), inset 0 1px rgba(255,255,255,.95); }
+			100% { transform: scale(1.055); box-shadow: 0 0 0 2px #f4d37f, 0 0 22px rgba(245,199,91,.8), inset 0 1px rgba(255,255,255,.95); }
+		}
+		@keyframes trade-pop { 0% { transform: scale(.94); box-shadow: inset 0 1px rgba(255,255,255,.92),0 0 0 0 rgba(118,221,189,0); } 45% { transform: scale(1.13); box-shadow: 0 0 0 4px rgba(118,221,189,.85),0 0 32px rgba(118,221,189,.72),inset 0 1px rgba(255,255,255,.95); } 100% { transform: scale(1); box-shadow: 0 0 0 1px rgba(118,221,189,.65),0 0 20px rgba(118,221,189,.3),inset 0 1px rgba(255,255,255,.95); } }
+		@keyframes cta-breathe { 0%,100% { box-shadow: 0 7px 20px rgba(48,190,151,.2), inset 0 1px rgba(255,255,255,.58); } 50% { box-shadow: 0 9px 28px rgba(48,190,151,.34), 0 0 0 3px rgba(112,227,191,.09), inset 0 1px rgba(255,255,255,.7); } }
+		@keyframes button-sheen { 0%,28% { transform: translateX(0) rotate(25deg); opacity: 0; } 38% { opacity: 1; } 65%,100% { transform: translateX(570%) rotate(25deg); opacity: 0; } }
+		@keyframes token-hop { 0% { opacity: .72; transform: translateY(3px) scale(.72) rotate(0); } 48% { opacity: 1; transform: translateY(-12px) scale(1.35) rotate(-12deg); } 78% { transform: translateY(1px) scale(.92) rotate(5deg); } 100% { transform: translateY(0) scale(1) rotate(0); } }
+		@keyframes step-ripple { 0% { opacity: .9; transform: scale(.72); } 100% { opacity: 0; transform: scale(1.08); } }
+		@keyframes skin-selected { 0% { transform: scale(.7) rotate(-15deg); } 70% { transform: scale(1.14) rotate(5deg); } 100% { transform: scale(1) rotate(0); } }
+		@keyframes center-card-enter { from { opacity: 0; transform: translateY(10px) scale(.96); filter: blur(4px); } to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+		@keyframes dialog-enter { from { opacity: 0; transform: translateY(12px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+		@keyframes wallet-enter { from { opacity: 0; transform: translateY(-12px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+		@keyframes wallet-pop { 0% { transform: scale(1); } 45% { transform: scale(1.08); box-shadow: 0 0 0 4px rgba(232,199,122,.2),0 8px 26px rgba(0,0,0,.23); } 100% { transform: scale(1); } }
+
+		body[data-theme="light"] .topbar {
+			border-color: rgba(52, 105, 93, .2);
+			background: linear-gradient(130deg, rgba(255,255,255,.88), rgba(255,255,255,.57) 58%, rgba(255,255,255,.76));
+			box-shadow: inset 0 1px #fff, 0 16px 42px rgba(53,96,88,.12);
+		}
+		body[data-theme="light"] .brand h1 { color: #143e38; }
+		body[data-theme="light"] .brand p,
+		body[data-theme="light"] .turn-label,
+		body[data-theme="light"] .player-role,
+		body[data-theme="light"] .cash-label,
+		body[data-theme="light"] .stat-label,
+		body[data-theme="light"] .action-title,
+		body[data-theme="light"] .log-heading span,
+		body[data-theme="light"] .rules-note { color: #56736d; }
+		body[data-theme="light"] .edition { border-color: rgba(52,105,93,.2); background: rgba(255,255,255,.54); color: #315b53; }
+		body[data-theme="light"] .theme-switch { border-color: rgba(52,105,93,.2); background: rgba(37,91,81,.08); }
+		body[data-theme="light"] .theme-button { color: #45665e; }
+		body[data-theme="light"] .theme-button:hover { color: #143e38; }
+		body[data-theme="light"] .skin-button { border-color: rgba(52,105,93,.18); background: rgba(255,255,255,.58); color: #315b53; }
+		body[data-theme="light"] .skin-dialog { border-color: rgba(49,103,91,.23); background: rgba(248,255,252,.96); box-shadow: 0 28px 90px rgba(37,82,72,.28),inset 0 1px #fff; }
+		body[data-theme="light"] .skin-dialog::backdrop { background: rgba(30,65,59,.28); }
+		body[data-theme="light"] .skin-close { border-color: rgba(49,103,91,.15); background: rgba(255,255,255,.76); color: #31564e; }
+		body[data-theme="light"] .skin-option { border-color: rgba(49,103,91,.14); background: rgba(255,255,255,.65); color: #244b42; }
+		body[data-theme="light"] .skin-option:hover { background: linear-gradient(145deg,color-mix(in srgb,var(--skin-color),transparent 76%),#fff); }
+		body[data-theme="light"] .skin-option[aria-pressed="true"] { border-color: color-mix(in srgb,var(--skin-color),#1c9171 45%); background: linear-gradient(145deg,color-mix(in srgb,var(--skin-color),transparent 70%),rgba(255,255,255,.7)); }
+		body[data-theme="light"] #buy-button { border-color: rgba(35,143,112,.4); background: linear-gradient(145deg,#d9f8eb,#b8ecd8); color: #165846; }
+		body[data-theme="light"] #restart-button { border-color: rgba(35,143,112,.35); background: #e2f7ee; color: #165846; }
+		body[data-theme="light"] .theme-button[aria-pressed="true"] { border-color: rgba(46,112,99,.2); background: linear-gradient(145deg,#fff,#e0f2ec); box-shadow: 0 3px 12px rgba(43,97,85,.14),inset 0 1px #fff; color: #145b4d; }
+		body[data-theme="light"] .board-frame { border-color: rgba(46,103,91,.22); background: linear-gradient(145deg,rgba(255,255,255,.88),rgba(223,241,237,.62)); box-shadow: 0 24px 70px rgba(41,86,77,.18),inset 0 1px #fff; }
+		body[data-theme="light"] .panel { border-color: rgba(53,107,94,.2); background: linear-gradient(145deg,rgba(255,255,255,.82),rgba(255,255,255,.55) 58%,rgba(226,243,237,.67)); box-shadow: 0 16px 40px rgba(46,87,78,.13),inset 0 1px #fff; }
+		body[data-theme="light"] .player-name,
+		body[data-theme="light"] .opponent-name,
+		body[data-theme="light"] .log-heading h2 { color: #1d403a; }
+		body[data-theme="light"] .cash-value,
+		body[data-theme="light"] .opponent-cash { color: #936719; }
+		body[data-theme="light"] .cash-currency { color: #667d73; }
+		body[data-theme="light"] .round-chip { border-color: rgba(154,107,22,.28); color: #8d671b; }
+		body[data-theme="light"] .stat-box,
+		body[data-theme="light"] .opponent { border-color: rgba(47,103,91,.15); background: linear-gradient(145deg,rgba(255,255,255,.73),rgba(233,246,241,.5)); box-shadow: inset 0 1px #fff; }
+		body[data-theme="light"] .opponent.is-active-turn { border-color: rgba(22,127,113,.65); background: linear-gradient(145deg,rgba(105,214,178,.28),rgba(255,255,255,.76)); box-shadow: 0 0 0 2px rgba(22,127,113,.12),0 0 18px rgba(22,127,113,.12); }
+		body[data-theme="light"] .stat-value { color: #244f45; }
+		body[data-theme="light"] .action-message { color: #254b43; }
+		body[data-theme="light"] .action-button { border-color: rgba(166,120,35,.37); background: linear-gradient(145deg,#fff1c9,#f5dda0); box-shadow: inset 0 1px #fff,0 6px 15px rgba(114,82,26,.12); color: #694b12; }
+		body[data-theme="light"] .action-button.primary { border-color: rgba(35,143,112,.42); background: linear-gradient(115deg,#b1f4dc,#69d6b2 58%,#43ba97); box-shadow: 0 8px 24px rgba(48,160,125,.2),inset 0 1px #fff; color: #0b4539; }
+		body[data-theme="light"] .action-button.secondary { border-color: rgba(50,100,89,.19); background: linear-gradient(145deg,#fff,#e8f4ef); color: #31564e; }
+		body[data-theme="light"] .log-entry { border-right-color: rgba(32,137,111,.55); background: rgba(255,255,255,.57); color: #3d5b53; }
+		body[data-theme="light"] .log-entry:first-child { border-right-color: #c18a23; color: #71531c; }
+		body[data-theme="light"] .rules-note { color: #627e75; }
+		body[data-theme="light"] .toast { border-color: rgba(39,106,90,.24); background: rgba(248,255,252,.94); box-shadow: 0 10px 35px rgba(34,83,72,.18); color: #31584e; }
+		body[data-theme="light"] {
+			--page-text: #273449;
+			--surface-text: #273449;
+			--ink: #273449;
+			--muted: #69778b;
+			--gold: #9a6b24;
+			--teal: #5773aa;
+			--panel: rgba(255,255,255,.92);
+			--panel-border: rgba(74,91,119,.16);
+			--glass-fill: rgba(255,255,255,.88);
+			--glass-edge: rgba(255,255,255,.98);
+			background: linear-gradient(145deg,#fff,#f7f8fb 58%,#fff);
+		}
+		body[data-theme="light"]::before { background: radial-gradient(circle,rgba(115,145,205,.09),transparent 68%); }
+		body[data-theme="light"]::after { background: radial-gradient(circle,rgba(201,165,105,.08),transparent 68%); }
+		body[data-theme="light"] .topbar,
+		body[data-theme="light"] .board-frame,
+		body[data-theme="light"] .panel,
+		body[data-theme="light"] .economy-panel,
+		body[data-theme="light"] .stat-box,
+		body[data-theme="light"] .opponent,
+		body[data-theme="light"] .log-entry {
+			border-color: rgba(74,91,119,.15);
+			background: linear-gradient(145deg,rgba(255,255,255,.98),rgba(248,249,252,.94));
+			box-shadow: 0 12px 32px rgba(39,52,73,.08),inset 0 1px #fff;
+		}
+		body[data-theme="light"] .board {
+			border-color: #fff;
+			background: linear-gradient(145deg,#f8f9fc,#edf0f5);
+			box-shadow: inset 0 0 0 2px rgba(88,108,143,.08),inset 0 1px #fff,0 8px 26px rgba(39,52,73,.12);
+		}
+		body[data-theme="light"] .board-center {
+			border-color: rgba(88,108,143,.16);
+			background: radial-gradient(ellipse at 50% 45%,#fff,#f7f8fb 72%);
+			color: #46546a;
+			box-shadow: inset 0 1px #fff,inset 0 0 55px rgba(88,108,143,.05);
+		}
+		body[data-theme="light"] .board-center::before,
+		body[data-theme="light"] .board-center::after { border-color: rgba(88,108,143,.1); }
+		body[data-theme="light"] .center-title,
+		body[data-theme="light"] .center-score strong { color: #334b72; }
+		body[data-theme="light"] .center-game { border-color: rgba(255,255,255,.98); background: rgba(255,255,255,.84); box-shadow: 0 12px 34px rgba(39,52,73,.08),inset 0 1px #fff; }
+		body[data-theme="light"] .center-action-title,
+		body[data-theme="light"] .center-message { color: #46546a; }
+		body[data-theme="light"] .center-die { filter: drop-shadow(0 10px 7px rgba(39,52,73,.18)); }
+		body[data-theme="light"] .die-face { border-color: #d5c49c; background: radial-gradient(circle at 28% 20%,#fff,transparent 36%),linear-gradient(145deg,#fff,#f1f3f7 58%,#d9dfeb); box-shadow: inset 0 2px 3px #fff,inset 0 -5px 9px rgba(68,83,112,.12),0 2px 5px rgba(39,52,73,.12); color: #405b8d; }
+		body[data-theme="light"] .space:not(.has-photo) { border-color: rgba(74,91,119,.16); background: linear-gradient(145deg,#fff,#fafbfc); color: #303b4e; }
+		body[data-theme="light"] .space.start { background: linear-gradient(145deg,#fff,#f7f3e9); }
+		body[data-theme="light"] .space.jail,
+		body[data-theme="light"] .space.visiting,
+		body[data-theme="light"] .space.special,
+		body[data-theme="light"] .space.tax,
+		body[data-theme="light"] .space.chance,
+		body[data-theme="light"] .space.station,
+		body[data-theme="light"] .space.company-utility,
+		body[data-theme="light"] .space.company-railway,
+		body[data-theme="light"] .space.company-airline,
+		body[data-theme="light"] .space.group-coast:not(.has-photo),
+		body[data-theme="light"] .space.group-cyan:not(.has-photo),
+		body[data-theme="light"] .space.group-orange:not(.has-photo),
+		body[data-theme="light"] .space.group-red:not(.has-photo),
+		body[data-theme="light"] .space.group-yellow:not(.has-photo),
+		body[data-theme="light"] .space.group-green:not(.has-photo),
+		body[data-theme="light"] .space.group-blue:not(.has-photo),
+		body[data-theme="light"] .space.group-purple:not(.has-photo) { background: linear-gradient(145deg,#fff,#fafbfc); }
+		body[data-theme="light"] .space.has-photo { background: linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.9) 52%,#fff); }
+		body[data-theme="light"] .space.has-photo::after { background: linear-gradient(180deg,transparent,rgba(255,255,255,.94)); }
+		body[data-theme="light"] .space-value { color: #737d8e; }
+		body[data-theme="light"] .center-dice-total { color: #9a6b24; }
+		body[data-theme="light"] .theme-switch { border-color: rgba(74,91,119,.15); background: rgba(255,255,255,.8); }
+		body[data-theme="light"] .theme-button { color: #59677c; }
+		body[data-theme="light"] .theme-button:hover { color: #273449; }
+		body[data-theme="light"] .theme-button[aria-pressed="true"] { border-color: rgba(87,115,170,.2); background: linear-gradient(145deg,#fff,#eef2f9); box-shadow: 0 3px 12px rgba(39,52,73,.09),inset 0 1px #fff; color: #405b8d; }
+		body[data-theme="light"] .action-button.primary,
+		body[data-theme="light"] #buy-button,
+		body[data-theme="light"] #restart-button { border-color: rgba(87,115,170,.3); background: linear-gradient(145deg,#edf2fc,#dce5f7); color: #334b72; box-shadow: 0 7px 20px rgba(70,94,145,.11),inset 0 1px #fff; }
+		body[data-theme="light"] .action-button.secondary { border-color: rgba(74,91,119,.15); background: linear-gradient(145deg,#fff,#f4f6fa); color: #46546a; }
+		body[data-theme="light"] .property-status { border-right-color: #6883b5; background: rgba(88,116,173,.08); color: #34445e; }
+		body[data-theme="light"] .chat-heading-icon,
+		body[data-theme="light"] .chat-emoji,
+		body[data-theme="light"] .chat-input,
+		body[data-theme="light"] .chat-send,
+		body[data-theme="light"] .economy-button,
+		body[data-theme="light"] .economy-summary { border-color: rgba(74,91,119,.15); background: #f7f8fb; color: #34445e; }
+		body[data-theme="light"] .property-dialog,
+		body[data-theme="light"] .profile-dialog,
+		body[data-theme="light"] .skin-dialog,
+		body[data-theme="light"] .economy-dialog { border-color: rgba(74,91,119,.16); background: rgba(255,255,255,.98); color: #273449; }
+		body[data-theme="light"] .toast { border-color: rgba(74,91,119,.16); background: rgba(255,255,255,.97); color: #34445e; }
+		.landing-screen { position: fixed; z-index: 50; inset: 0; display: grid; overflow-y: auto; place-items: center; padding: 24px; background: radial-gradient(ellipse at 12% 8%,rgba(100,135,199,.12),transparent 36%),radial-gradient(ellipse at 88% 92%,rgba(212,174,108,.12),transparent 38%),linear-gradient(145deg,#fff,#f6f8fc 58%,#fff); color: #273449; animation: page-in .45s ease both; }
+		.landing-screen[hidden], .app[hidden], .wallet-hud[hidden] { display: none !important; }
+		.landing-shell { width: min(1100px,100%); }
+		.landing-header { display: flex; align-items: center; gap: 15px; margin-bottom: 22px; }
+		.landing-brand-mark { display: grid; width: 58px; height: 58px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(188,147,75,.32); border-radius: 20px; background: linear-gradient(145deg,#fff,#f4ead6); box-shadow: 0 9px 24px rgba(53,66,91,.1),inset 0 1px #fff; color: #a77b32; font-family: Georgia,serif; font-size: 38px; font-weight: 900; }
+		.landing-brand-copy { flex: 1; }
+		.landing-eyebrow,.landing-section-kicker { margin: 0 0 4px; color: #9a6b24; font-size: 10px; font-weight: 900; letter-spacing: .08em; }
+		.landing-brand-copy h1 { margin: 0; color: #273b5c; font-size: clamp(30px,5vw,46px); font-weight: 1000; letter-spacing: -.045em; }
+		.landing-brand-copy > p:last-child { margin: 3px 0 0; color: #6d7789; font-size: 12px; }
+		.coin-wallet { display: flex; align-items: center; gap: 9px; padding: 9px 14px; border: 1px solid rgba(186,143,61,.24); border-radius: 15px; background: linear-gradient(145deg,#fffdf6,#fff7e4); box-shadow: 0 7px 20px rgba(70,78,91,.08); color: #a87518; }
+		.coin-wallet > span:first-child { font-size: 24px; filter: drop-shadow(0 3px 3px rgba(166,121,30,.22)); }
+		.coin-wallet small,.coin-wallet strong { display: block; }
+		.coin-wallet small { color: #82765e; font-size: 9px; }
+		.coin-wallet strong { font-size: 18px; font-variant-numeric: tabular-nums; }
+		.landing-columns { display: grid; grid-template-columns: minmax(260px,.78fr) minmax(0,1.22fr); gap: 15px; align-items: start; }
+		.mode-panel,.cosmetic-panel { padding: clamp(15px,2.2vw,22px); border: 1px solid rgba(74,91,119,.13); border-radius: 23px; background: rgba(255,255,255,.84); box-shadow: 0 16px 45px rgba(39,52,73,.08),inset 0 1px #fff; backdrop-filter: blur(14px); }
+		.mode-panel h2,.cosmetic-panel h2 { margin: 0 0 14px; color: #2c3d58; font-size: 17px; font-weight: 900; }
+		.mode-card { display: flex; width: 100%; align-items: center; gap: 11px; margin-top: 9px; padding: 12px; border: 1px solid rgba(77,101,151,.18); border-radius: 15px; background: linear-gradient(145deg,#fff,#f8f9fc); color: #2e3d55; text-align: right; cursor: pointer; transition: transform .2s ease,border-color .2s ease,box-shadow .2s ease; }
+		.mode-card:hover:not(:disabled) { transform: translateY(-2px); border-color: rgba(77,101,151,.4); box-shadow: 0 9px 20px rgba(53,75,120,.1); }
+		.mode-card.featured { border-color: rgba(77,101,151,.28); background: linear-gradient(120deg,#f1f5ff,#fff 72%); }
+		.mode-card:disabled { cursor: not-allowed; opacity: .73; }
+		.mode-card-icon { display: grid; width: 42px; height: 42px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(77,101,151,.13); border-radius: 13px; background: #fff; box-shadow: inset 0 1px #fff,0 3px 9px rgba(39,52,73,.06); font-size: 21px; }
+		.mode-card-copy { display: grid; flex: 1; gap: 4px; }
+		.mode-card-copy strong { font-size: 11px; font-weight: 900; }
+		.mode-card-copy small { color: #768196; font-size: 9px; line-height: 1.5; }
+		.mode-card-arrow { color: #5a74a7; font-size: 19px; }
+		.coming-soon-badge { flex: 0 0 auto; padding: 5px 7px; border: 1px solid rgba(179,137,63,.18); border-radius: 9px; background: #fff8e9; color: #98702c; font-size: 8px; font-weight: 900; }
+		.landing-reward-note { margin-top: 14px; padding: 10px; border-radius: 12px; background: #f7f8fb; color: #737e90; font-size: 9px; line-height: 1.8; }
+		.landing-reward-note span { color: #b28235; }
+		.cosmetic-heading-row { display: flex; align-items: end; justify-content: space-between; gap: 8px; }
+		.cosmetic-player-label { color: #65728a; font-size: 10px; font-weight: 800; }
+		.cosmetic-player-tabs,.cosmetic-kind-tabs { display: flex; gap: 6px; margin: 10px 0; }
+		.cosmetic-player-tab,.cosmetic-kind-tab { min-height: 32px; padding: 6px 10px; border: 1px solid rgba(74,91,119,.13); border-radius: 10px; background: #fff; color: #647189; font: inherit; font-size: 9px; font-weight: 800; cursor: pointer; }
+		.cosmetic-player-tab[aria-selected="true"],.cosmetic-kind-tab[aria-selected="true"] { border-color: rgba(77,101,151,.28); background: #edf2fc; color: #3d5688; }
+		.cosmetic-kind-tabs { padding: 3px; border-radius: 12px; background: #f3f5f9; }
+		.cosmetic-kind-tab { flex: 1; border-color: transparent; background: transparent; }
+		.cosmetic-grid { display: grid; max-height: min(37vh,330px); grid-template-columns: repeat(5,minmax(0,1fr)); gap: 7px; overflow-y: auto; padding: 2px; }
+		.cosmetic-grid[hidden] { display: none; }
+		.cosmetic-card { position: relative; display: grid; min-width: 0; min-height: 98px; justify-items: center; align-content: center; gap: 5px; padding: 7px 4px; border: 1px solid rgba(74,91,119,.12); border-radius: 13px; background: linear-gradient(145deg,#fff,#f8f9fc); color: #35445c; font: inherit; cursor: pointer; transition: transform .2s ease,border-color .2s ease,box-shadow .2s ease; }
+		.cosmetic-card:hover:not(:disabled) { transform: translateY(-2px); border-color: rgba(77,101,151,.38); box-shadow: 0 7px 16px rgba(48,67,106,.1); }
+		.cosmetic-card.selected { border-color: #5874aa; box-shadow: 0 0 0 2px rgba(88,116,170,.12); }
+		.cosmetic-card:disabled:not(.owned) { cursor: not-allowed; opacity: .62; }
+		.cosmetic-card-preview { display: grid; width: 43px; height: 43px; place-items: center; border: 1px solid color-mix(in srgb,var(--skin-color,#d6deec),white 40%); border-radius: 14px; background: radial-gradient(circle at 30% 22%,#fff,transparent 48%),linear-gradient(145deg,color-mix(in srgb,var(--skin-color,#d6deec),white 62%),var(--skin-color,#d6deec)); box-shadow: inset 0 1px #fff,0 4px 9px rgba(39,52,73,.12); font-size: 24px; }
+		.cosmetic-card:not(.dice-card) .cosmetic-card-preview { border-radius: 15px 15px 18px 18px; box-shadow: inset 0 2px 3px rgba(255,255,255,.95),inset 0 -5px 7px rgba(22,45,67,.24),0 7px 12px rgba(39,52,73,.17); transform: perspective(80px) rotateX(-7deg); }
+		.cosmetic-card.dice-card .cosmetic-card-preview { border-color: var(--die-edge,#d5c49c); border-radius: 12px; background: radial-gradient(circle at 28% 20%,#fff,transparent 36%),linear-gradient(145deg,var(--die-light,#fff),var(--die-mid,#e3e8f1) 58%,var(--die-dark,#8795ae)); box-shadow: inset 0 2px 3px #fff,inset 0 -4px 7px rgba(44,56,80,.16),0 4px 8px rgba(39,52,73,.12); color: var(--die-pip,#405b8d); }
+		.cosmetic-card-preview .die-pips { width: 68%; height: 68%; }
+		.cosmetic-card-preview .die-pip { width: 5px; height: 5px; visibility: hidden; }
+		.cosmetic-card-preview .die-pip:nth-child(1),.cosmetic-card-preview .die-pip:nth-child(3),.cosmetic-card-preview .die-pip:nth-child(5),.cosmetic-card-preview .die-pip:nth-child(7),.cosmetic-card-preview .die-pip:nth-child(9) { visibility: visible; }
+		.cosmetic-card-name { max-width: 100%; overflow: hidden; font-size: 8px; font-weight: 900; text-overflow: ellipsis; white-space: nowrap; }
+		.cosmetic-card-action { color: #8c6a2c; font-size: 8px; font-weight: 800; }
+		.cosmetic-card.selected .cosmetic-card-action { color: #4d689d; }
+		.cosmetic-card-lock { position: absolute; top: 5px; left: 5px; font-size: 10px; }
+		.landing-continue-button { width: 100%; min-height: 42px; margin-top: 12px; border: 1px solid rgba(77,101,151,.28); border-radius: 12px; background: linear-gradient(120deg,#eaf0ff,#dce5f7); color: #334b72; font: inherit; font-size: 11px; font-weight: 900; cursor: pointer; }
+		.landing-continue-button[hidden] { display: none; }
+		.online-roadmap { margin-top: 12px; padding: 11px 12px; border: 1px solid rgba(77,101,151,.14); border-radius: 14px; background: rgba(238,243,252,.58); color: #52627b; font-size: 9px; line-height: 1.8; }
+		.online-roadmap summary { color: #40577e; font-size: 10px; font-weight: 900; cursor: pointer; }
+		.online-roadmap p { margin: 8px 0 0; }
+		.chat-message-avatar { display: inline-grid; width: 20px; height: 20px; overflow: hidden; place-items: center; border: 1px solid rgba(255,255,255,.75); border-radius: 7px; background: color-mix(in srgb,var(--chat-color),white 78%); }
+		.board-corner-avatar { overflow: hidden; }
+		.opponent-avatar { overflow: hidden; }
+		.avatar { overflow: hidden; }
+		.piece { overflow: hidden; }
+		.landing-screen { background: radial-gradient(ellipse at 12% 8%,rgba(100,135,199,.2),transparent 36%),radial-gradient(ellipse at 88% 92%,rgba(93,197,184,.18),transparent 38%),linear-gradient(145deg,rgba(245,250,255,.78),rgba(237,245,251,.7) 58%,rgba(250,248,241,.75)); backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); }
+		.mode-panel,.cosmetic-panel { border-color: rgba(255,255,255,.75); background: linear-gradient(145deg,rgba(255,255,255,.78),rgba(245,250,255,.56)); box-shadow: 0 22px 65px rgba(52,73,105,.13),inset 0 1px rgba(255,255,255,.98),inset 0 -1px rgba(126,154,184,.1); backdrop-filter: blur(28px) saturate(170%); -webkit-backdrop-filter: blur(28px) saturate(170%); }
+		.mode-card,.cosmetic-card,.mode-card-icon,.cosmetic-player-tab,.cosmetic-kind-tab { border-color: rgba(255,255,255,.88); background: linear-gradient(145deg,rgba(255,255,255,.86),rgba(233,241,250,.62)); box-shadow: 0 8px 20px rgba(47,69,104,.07),inset 0 1px rgba(255,255,255,.98); backdrop-filter: blur(16px) saturate(155%); -webkit-backdrop-filter: blur(16px) saturate(155%); }
+		.mode-card.featured { background: linear-gradient(125deg,rgba(225,237,255,.8),rgba(255,255,255,.68)); }
+		.online-roadmap { border-color: rgba(255,255,255,.85); background: rgba(238,246,255,.5); box-shadow: inset 0 1px rgba(255,255,255,.9); }
+		.coin-wallet > span:first-child,.wallet-icon { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(255,227,162,.8); border-radius: 50%; background: radial-gradient(circle at 32% 25%,#fff9dc 0 8%,#f7d77e 30%,#ce9638 74%,#865a1d 100%); box-shadow: inset 0 2px 3px rgba(255,255,255,.95),inset 0 -3px 4px rgba(101,61,12,.34),0 4px 10px rgba(139,99,32,.25); color: #81581c; font-size: 13px; font-weight: 1000; }
+		.wallet-icon { color: #81581c; font-size: 16px; }
+		.wallet-coin > span[aria-hidden="true"] { display: grid; width: 19px; height: 19px; place-items: center; border: 1px solid rgba(255,227,162,.8); border-radius: 50%; background: radial-gradient(circle at 32% 25%,#fff9dc 0 8%,#f7d77e 30%,#ce9638 74%,#865a1d 100%); box-shadow: inset 0 1px 2px rgba(255,255,255,.9),0 2px 5px rgba(139,99,32,.2); color: #81581c; font-size: 9px; font-weight: 1000; }
+		.piece { position: relative; width: 31px; height: 31px; overflow: visible; border: 2px solid rgba(255,255,255,.96); border-radius: 13px 13px 15px 15px; box-shadow: 0 5px 9px rgba(15,31,42,.32),0 1px 0 rgba(255,255,255,.95),inset 0 2px 2px rgba(255,255,255,.88),inset 0 -5px 7px rgba(11,24,34,.26); font-size: 17px; text-shadow: 0 1px 2px rgba(0,0,0,.24); transform: translateY(-2px); }
+		.piece-stack { right: 2px; bottom: 3px; display: grid; max-width: calc(100% - 4px); grid-template-columns: repeat(2,minmax(0,1fr)); justify-items: center; gap: 2px; }
+		.piece { width: clamp(18px,2vw,24px); height: clamp(18px,2vw,24px); border-radius: 10px 10px 12px 12px; font-size: clamp(10px,1.25vw,14px); }
+		.piece::before { position: absolute; inset: 3px; border: 1px solid rgba(255,255,255,.52); border-radius: 9px 9px 11px 11px; content: ""; pointer-events: none; }
+		.piece::after { position: absolute; top: 2px; right: 5px; width: 12px; height: 5px; border-radius: 50%; background: rgba(255,255,255,.68); content: ""; filter: blur(1px); transform: rotate(-28deg); pointer-events: none; }
+		.piece.is-moving { animation: token-hop .26s cubic-bezier(.34,1.56,.64,1) both; box-shadow: 0 8px 14px rgba(0,0,0,.34),0 0 19px rgba(68,210,173,.9),inset 0 2px 2px rgba(255,255,255,.9); }
+		.die-face { border-width: 2px; border-radius: 15px; background: radial-gradient(circle at 26% 18%,rgba(255,255,255,.98),transparent 38%),linear-gradient(145deg,var(--die-light,#fffefa),var(--die-mid,#e7e8ed) 55%,var(--die-dark,#a9b0c0)); box-shadow: inset 0 2px 4px rgba(255,255,255,.96),inset 0 -6px 9px rgba(24,39,64,.28),0 4px 7px rgba(27,79,66,.2); color: var(--die-pip,#465b82); font-size: 14px; }
+		.die-pips { display: grid; width: 72%; height: 72%; grid-template: repeat(3,1fr)/repeat(3,1fr); align-items: center; justify-items: center; }
+		.die-pip { width: clamp(3px, .48vw, 6px); height: clamp(3px, .48vw, 6px); border-radius: 50%; background: currentColor; box-shadow: inset 0 1px 1px rgba(255,255,255,.5),0 1px 1px rgba(21,37,59,.2); }
+		.die-pip[hidden] { display: none; }
+		.die-face { padding: 0; }
+		.die-face .die-pip { visibility: hidden; }
+		.die-face.front .die-pip:nth-child(5) { visibility: visible; }
+		.die-face.top .die-pip:nth-child(1),.die-face.top .die-pip:nth-child(9) { visibility: visible; }
+		.die-face.right .die-pip:nth-child(1),.die-face.right .die-pip:nth-child(5),.die-face.right .die-pip:nth-child(9) { visibility: visible; }
+		.die-face.left .die-pip:nth-child(1),.die-face.left .die-pip:nth-child(3),.die-face.left .die-pip:nth-child(7),.die-face.left .die-pip:nth-child(9) { visibility: visible; }
+		.die-face.bottom .die-pip:nth-child(1),.die-face.bottom .die-pip:nth-child(3),.die-face.bottom .die-pip:nth-child(5),.die-face.bottom .die-pip:nth-child(7),.die-face.bottom .die-pip:nth-child(9) { visibility: visible; }
+		.die-face.back .die-pip:nth-child(1),.die-face.back .die-pip:nth-child(3),.die-face.back .die-pip:nth-child(4),.die-face.back .die-pip:nth-child(6),.die-face.back .die-pip:nth-child(7),.die-face.back .die-pip:nth-child(9) { visibility: visible; }
+		.property-rule { margin: 9px 0 0; padding: 10px 12px; border: 1px solid rgba(111,155,186,.17); border-radius: 12px; background: rgba(210,232,245,.22); color: var(--muted); font-size: 10px; line-height: 1.8; }
+		.header-utility-button { min-height: 34px; padding: 6px 10px; border: 1px solid rgba(226,237,220,.22); border-radius: 11px; background: rgba(255,255,255,.09); box-shadow: inset 0 1px rgba(255,255,255,.2),0 5px 16px rgba(0,0,0,.08); color: var(--ink); font: inherit; font-size: 10px; font-weight: 800; cursor: pointer; backdrop-filter: blur(18px) saturate(150%); -webkit-backdrop-filter: blur(18px) saturate(150%); transition: transform .2s ease,background .25s ease; }
+		.header-utility-button:hover { transform: translateY(-1px); background: rgba(255,255,255,.2); }
+		.header-utility-button.exit { border-color: rgba(222,129,122,.27); color: #ffb8aa; }
+		body[data-theme="light"] .header-utility-button { border-color: rgba(49,103,91,.18); background: rgba(255,255,255,.44); color: #31564e; }
+		body[data-theme="light"] .header-utility-button.exit { border-color: rgba(183,97,84,.22); color: #a64f46; }
+		.info-dialog { width: min(520px,calc(100vw - 28px)); max-width: none; max-height: min(82vh,720px); padding: 0; overflow: auto; border: 1px solid rgba(255,255,255,.65); border-radius: 24px; background: rgba(241,249,250,.88); box-shadow: 0 28px 90px rgba(14,49,62,.32),inset 0 1px #fff; color: #29464d; backdrop-filter: blur(32px) saturate(165%); -webkit-backdrop-filter: blur(32px) saturate(165%); }
+		.info-dialog::backdrop { background: rgba(12,32,40,.38); backdrop-filter: blur(8px); }
+		.info-dialog-inner { padding: clamp(18px,4vw,28px); }
+		.info-dialog h2 { margin: 0 0 12px; font-size: 20px; }
+		.info-dialog h3 { margin: 18px 0 5px; font-size: 13px; }
+		.info-dialog p,.info-dialog li { color: #5b7278; font-size: 11px; line-height: 1.9; }
+		.info-dialog ul { margin: 7px 0; padding-inline-start: 22px; }
+		.info-dialog-actions { display: flex; justify-content: flex-end; margin-top: 18px; }
+		.info-dialog .action-button { border-color: rgba(65,122,127,.24); background: rgba(255,255,255,.78); color: #315d60; }
+		.landing-footer { display: flex; justify-content: space-between; gap: 10px; margin-top: 15px; color: #8992a1; font-size: 8px; }
+		.landing-footer span:first-child { color: #9a6b24; font-weight: 900; letter-spacing: .18em; }
+		@media (max-width: 760px) {
+			.landing-screen { align-items: start; padding: 14px; }
+			.landing-columns { grid-template-columns: 1fr; }
+			.mode-panel { order: 2; }
+			.cosmetic-grid { grid-template-columns: repeat(5,minmax(0,1fr)); max-height: 290px; }
+		}
+		@media (max-width: 480px) {
+			.landing-screen { padding: 10px; }
+			.landing-header { gap: 9px; margin-bottom: 12px; }
+			.landing-brand-mark { width: 47px; height: 47px; border-radius: 15px; font-size: 31px; }
+			.landing-brand-copy > p:last-child { font-size: 10px; }
+			.coin-wallet { gap: 5px; padding: 7px 9px; }
+			.coin-wallet > span:first-child { font-size: 19px; }
+			.landing-columns { gap: 10px; }
+			.mode-panel,.cosmetic-panel { padding: 13px; border-radius: 18px; }
+			.cosmetic-grid { grid-template-columns: repeat(4,minmax(0,1fr)); max-height: 270px; }
+			.cosmetic-player-tabs { gap: 4px; }
+			.cosmetic-player-tab { padding-inline: 7px; font-size: 8px; }
+			.landing-footer { flex-wrap: wrap; }
+		}
+		.topbar, .board-frame, .panel, .edition, .theme-switch, .theme-button, .action-button, .stat-box, .opponent, .log-entry, .toast { transition-property: background, background-color, color, border-color, box-shadow, transform, opacity; transition-duration: .45s; }
+
+		@media (max-width: 900px) {
+			body { padding: 78px 16px 16px; }
+			.topbar { display: grid; grid-template-columns: 1fr; justify-content: stretch; gap: 9px; }
+			.top-actions { flex-wrap: wrap; justify-content: space-between; }
+			.action-buttons.toolbar-actions { flex: 1 0 100%; }
+			.toolbar-actions .action-button.primary { flex: 1; }
+			.layout { grid-template-columns: 1fr; max-width: 720px; margin-inline: auto; }
+			.sidebar { grid-template-columns: 1fr 1fr; align-items: start; }
+			.turn-panel { grid-column: 1 / -1; }
+			.log-panel { grid-column: 1 / -1; }
+		}
+
+		@media (max-width: 540px) {
+			body { padding: 78px 5px 12px; }
+			.topbar { display: grid; grid-template-columns: 1fr; gap: 9px; margin-bottom: 10px; padding: 10px; }
+			.brand { gap: 8px; }
+			.brand-icon { width: 38px; height: 38px; border-radius: 12px; font-size: 20px; }
+			.brand h1 { font-size: 17px; }
+			.brand p { max-width: 180px; font-size: 9px; }
+			.top-actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; }
+			.profile-button { min-height: 33px; padding: 5px 8px; font-size: 10px; }
+			.skin-button { min-height: 33px; padding: 5px 8px; font-size: 10px; }
+			.sound-toggle { width: 33px; height: 33px; }
+			.action-buttons.toolbar-actions { flex: 1 0 100%; }
+			.toolbar-actions .action-button.primary { flex: 1; }
+			.theme-button { min-height: 30px; padding: 5px 8px; font-size: 10px; }
+			.board-frame { padding: 3px; border-radius: 15px; }
+			.board-player-corners { gap: 6px; padding: 3px 1px 7px; }
+			.board-player-corners.bottom { padding: 7px 1px 3px; }
+			.board-corner-player { width: 48%; gap: 5px; padding: 6px; border-radius: 11px; }
+			.board-corner-avatar { width: 27px; height: 27px; border-radius: 9px; font-size: 15px; }
+			.board-corner-name { font-size: 10px; }
+			.board-corner-status { font-size: 8px; }
+			.board-corner-balance { font-size: 9px; }
+			.board { gap: 2px; padding: 3px; }
+			.space { padding: 3px 1px 2px; border-radius: 3px; }
+			.space-name { font-size: clamp(10px, 2.65vw, 12px); line-height: 1.2; }
+			.space-value { font-size: clamp(8.5px, 2vw, 10px); }
+			.space-icon { font-size: clamp(14px, 3.8vw, 19px); }
+			.property-band { height: 6px; }
+			.piece { width: 17px; height: 17px; border-radius: 7px 7px 9px 9px; font-size: 9px; }
+			.piece::before { inset: 1px; border-radius: 5px 5px 6px 6px; }
+			.piece::after { top: 1px; right: 2px; width: 6px; height: 3px; }
+			.piece-stack { right: 1px; bottom: 3px; gap: 1px; }
+			.header-utility-button { min-height: 32px; flex: 1 1 auto; padding: 5px 7px; font-size: 9px; }
+			.online-roadmap { padding: 9px 10px; }
+			.owner-dot { top: 7px; left: 2px; width: 8px; height: 8px; border-width: 1px; }
+			.center-kicker { margin-bottom: 2px; font-size: 7px; }
+			.center-title { font-size: clamp(16px, 5vw, 25px); }
+			.center-subtitle { margin-top: 0; font-size: 7px; }
+			.center-motif { margin-top: 0; font-size: 12px; }
+			.center-score { right: 5px; bottom: 5px; left: 5px; font-size: 7px; }
+			.center-game { width: 90%; gap: 4px; padding: 9px 8px 12px; border-radius: 13px; }
+			.center-game .center-kicker { font-size: 6px; }
+			.center-game .center-title { font-size: clamp(15px,4.8vw,22px); }
+			.center-game .center-subtitle { font-size: 6px; }
+			.center-game .center-motif { font-size: 10px; }
+			.center-action-title { margin-top: 2px; font-size: 8px; }
+			.center-dice-row { min-height: 37px; gap: 6px; }
+			.center-die { --die-size: 30px; width: var(--die-size); height: var(--die-size); }
+			.die-face { border-width: 1px; border-radius: 8px; font-size: 22px; }
+			.house-indicator { top: 8px; right: 1px; padding: 0 2px; font-size: 7px; }
+			.center-dice-total { min-width: 23px; font-size: 15px; }
+			.center-message { min-height: 2.2em; font-size: 7px; line-height: 1.55; }
+			.sidebar { grid-template-columns: 1fr; gap: 9px; }
+			.turn-panel { padding: 12px; }
+			.turn-panel { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 12px; }
+			.turn-top { grid-column: 1 / -1; }
+			.active-player { margin-top: 5px; }
+			.cash-line { display: block; margin: 5px 0 0; padding: 0; border: 0; text-align: left; }
+			.cash-value { font-size: 18px; }
+			.stats-row { grid-column: 1 / -1; margin-top: 2px; }
+			.opponents { grid-column: 1 / -1; margin-top: 2px; }
+			.skin-dialog-inner { padding: 16px; }
+			.skin-grid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 7px; max-height: min(58vh,480px); }
+			.skin-option { min-height: 88px; }
+			.skin-option-icon { width: 46px; height: 46px; border-radius: 15px; font-size: 26px; }
+			.skin-option-name { font-size: 10px; }
+			.profile-dialog-inner { padding: 16px; }
+			.property-dialog-inner { padding: 16px; }
+		}
+
+		@media (prefers-reduced-motion: reduce) {
+			*, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+		}
+	</style>
+</head>
+<body data-theme="light">
+	<section class="landing-screen" id="landing-screen" aria-labelledby="landing-title">
+		<div class="landing-shell">
+			<header class="landing-header">
+				<div class="landing-brand-mark" aria-hidden="true">M</div>
+				<div class="landing-brand-copy">
+					<p class="landing-eyebrow">بازی رومیزی ایرانی</p>
+					<h1 id="landing-title">Monopl</h1>
+					<p>شهر بخر، امپراتوری بساز، برنده شو</p>
+				</div>
+			</header>
+			<div class="landing-columns">
+				<section class="mode-panel" aria-labelledby="mode-heading">
+					<p class="landing-section-kicker">شروع ماجراجویی</p>
+					<h2 id="mode-heading">انتخاب حالت بازی</h2>
+					<button class="mode-card featured" id="play-ai-button" type="button">
+						<span class="mode-card-icon" aria-hidden="true">🤖</span>
+						<span class="mode-card-copy"><strong>بازی چهارنفره با هوش مصنوعی</strong><small>تو در برابر سه رقیب باهوش · همین حالا بازی کن</small></span>
+						<span class="mode-card-arrow" aria-hidden="true">←</span>
+					</button>
+					<button class="mode-card" id="play-friends-button" type="button">
+						<span class="mode-card-icon" aria-hidden="true">👥</span>
+						<span class="mode-card-copy"><strong>بازی آنلاین با دوستان</strong><small>ساخت اتاق و دعوت با کد · نیازمند اتصال به سرور</small></span>
+						<span class="mode-card-arrow" aria-hidden="true">←</span>
+					</button>
+					<button class="mode-card" id="play-random-button" type="button">
+						<span class="mode-card-icon" aria-hidden="true">🌐</span>
+						<span class="mode-card-copy"><strong>مسابقه با بازیکنان تصادفی</strong><small>پیداکردن حریف آنلاین · نیازمند اتصال به سرور</small></span>
+						<span class="mode-card-arrow" aria-hidden="true">←</span>
+					</button>
+					<details class="online-roadmap">
+						<summary>وضعیت اتصال آنلاین</summary>
+						<p>برای بازی آنلاین یک سرور WebSocket لازم است. سرور اختصاصی هنوز ساخته یا میزبانی نشده؛ این دکمه‌ها به‌جای نمایش الکی «به‌زودی»، وضعیت اتصال را صریح نشان می‌دهند.</p>
+					</details>
+				</section>
+				<section class="cosmetic-panel" aria-labelledby="cosmetic-heading">
+					<div class="cosmetic-heading-row">
+						<div><p class="landing-section-kicker">فروشگاه شخصی‌سازی</p><h2 id="cosmetic-heading">مهره و تاس خودت را بساز</h2></div>
+						<div class="coin-wallet" aria-live="polite" aria-label="موجودی سکه">
+							<span aria-hidden="true">●</span><span><small>سکه‌های شما</small><strong id="coin-balance">۲۵۰</strong></span>
+						</div>
+					</div>
+					<p class="cosmetic-player-label">انتخاب ظاهر برای بازیکن:</p>
+					<div class="cosmetic-player-tabs" id="cosmetic-player-tabs" role="tablist" aria-label="انتخاب بازیکن"></div>
+					<div class="cosmetic-kind-tabs" role="tablist" aria-label="نوع ظاهر">
+						<button class="cosmetic-kind-tab" id="token-kind-tab" type="button" role="tab" aria-selected="true">مهره‌ها</button>
+						<button class="cosmetic-kind-tab" id="dice-kind-tab" type="button" role="tab" aria-selected="false">تاس‌ها</button>
+					</div>
+					<div class="cosmetic-grid" id="token-grid" aria-label="فروشگاه مهره‌ها"></div>
+					<div class="cosmetic-grid" id="dice-grid" aria-label="فروشگاه تاس‌ها" hidden></div>
+					<p class="landing-reward-note">با عبور از خانه‌ی شروع <span>۲۵ سکه</span> می‌گیری؛ برنده‌شدن در بازی هم <span>۱۰۰ سکه</span> جایزه دارد. دلارهای بازی جدا از سکه‌های فروشگاه هستند.</p>
+					<button class="landing-continue-button" id="landing-continue-button" type="button" hidden>ادامه‌ی بازی</button>
+				</section>
+			</div>
+			<footer class="landing-footer"><span>MONOPL</span><span>حالت هوش مصنوعی آفلاین است</span><span>نام کاربری این دستگاه یک‌بار ذخیره می‌شود</span></footer>
+		</div>
+	</section>
+	<div class="wallet-hud" id="wallet-hud" aria-live="polite" aria-label="موجودی بازیکن فعال" hidden>
+		<span class="wallet-icon" aria-hidden="true">$</span>
+		<span><span class="wallet-caption" id="wallet-caption">موجودی بازیکن فعال</span><strong class="wallet-amount" id="wallet-amount">$۸۰۰</strong></span>
+	</div>
+	<main class="app" id="game-app" hidden>
+		<header class="topbar">
+			<div class="brand">
+				<div class="brand-icon" aria-hidden="true">✦</div>
+				<div>
+					<h1><span>Monopl</span></h1>
+					<p>یک سفر پرهیجان میان شهرهای ایران · رقابت چهارنفره</p>
+				</div>
+			</div>
+			<div class="top-actions">
+				<button class="profile-button" id="profile-open-button" type="button" aria-haspopup="dialog" aria-controls="profile-dialog">
+					<span aria-hidden="true">✎</span><span>نام‌های بازیکنان</span>
+				</button>
+				<button class="skin-button" id="skin-open-button" type="button" aria-haspopup="dialog" aria-controls="landing-screen">فروشگاه مهره و تاس</button>
+				<button class="header-utility-button" id="help-open-button" type="button" aria-haspopup="dialog" aria-controls="help-dialog">راهنما</button>
+				<button class="header-utility-button exit" id="return-menu-button" type="button" aria-label="خروج از بازی و بازگشت به منو">خروج از بازی</button>
+				<button class="sound-toggle" id="sound-toggle" type="button" aria-label="خاموش کردن صدا" aria-pressed="true" title="صدا روشن">🔊</button>
+				<div class="theme-switch" role="group" aria-label="انتخاب تم">
+					<button class="theme-button" id="dark-theme-button" type="button" aria-pressed="false" aria-label="تم تاریک">
+						<span class="theme-icon" aria-hidden="true">☾</span><span>تاریک</span>
+					</button>
+					<button class="theme-button" id="light-theme-button" type="button" aria-pressed="true" aria-label="تم روشن">
+						<span class="theme-icon" aria-hidden="true">☀</span><span>روشن</span>
+					</button>
+				</div>
+				<div class="action-buttons toolbar-actions" id="top-game-actions">
+					<button class="action-button primary wide" id="roll-button" type="button">🎲　شروع بازی</button>
+					<button class="action-button" id="buy-button" type="button" hidden>خرید شهر</button>
+					<button class="action-button secondary" id="skip-button" type="button" hidden>رد کردن</button>
+					<button class="action-button wide" id="end-button" type="button" hidden>پایان نوبت　←</button>
+					<button class="action-button wide" id="restart-button" type="button" hidden>شروع بازی تازه</button>
+				</div>
+			</div>
+		</header>
+
+		<div class="layout">
+			<section class="board-frame" aria-label="صفحه‌ی بازی">
+				<div class="board-player-corners top" id="board-player-corners-top" aria-label="بازیکنان در گوشه‌ی بالای صفحه"></div>
+				<div class="board" id="board">
+					<div class="board-center">
+						<div class="center-game">
+							<p class="center-kicker">یک ماجراجویی ایرانی</p>
+							<p class="center-title">Monopl</p>
+							<p class="center-subtitle">تاس بینداز، شهرها را فتح کن، برنده شو</p>
+							<div class="center-motif" aria-hidden="true">✦　❋　✦</div>
+							<h2 class="center-action-title">تاس و نتیجه‌ی حرکت</h2>
+							<div class="center-dice-row" aria-label="نتیجه‌ی تاس">
+								<div class="center-die" id="die-one" aria-label="تاس با نتیجه‌ی یک">
+									<span class="die-face front"><span class="die-pips"><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i></span></span>
+									<span class="die-face back"><span class="die-pips"><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i></span></span>
+									<span class="die-face right"><span class="die-pips"><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i></span></span>
+									<span class="die-face left"><span class="die-pips"><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i></span></span>
+									<span class="die-face top"><span class="die-pips"><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i></span></span>
+									<span class="die-face bottom"><span class="die-pips"><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i><i class="die-pip"></i></span></span>
+								</div>
+								<div class="center-dice-total" id="dice-total">—</div>
+							</div>
+							<p class="center-message" id="action-message">تاس را بینداز و سفر را شروع کن!</p>
+						</div>
+						<div class="center-score"><span>دور <strong id="center-round">۱</strong></span><span>بانک <strong>USD</strong></span></div>
+					</div>
+				</div>
+				<div class="board-player-corners bottom" id="board-player-corners-bottom" aria-label="بازیکنان در گوشه‌ی پایین صفحه"></div>
+			</section>
+
+			<aside class="sidebar" aria-label="اطلاعات و کنترل بازی">
+				<section class="panel turn-panel">
+					<div class="turn-top">
+						<p class="turn-label" id="turn-label">نوبت شماست</p>
+						<span class="round-chip">دور <span id="round-number">۱</span></span>
+					</div>
+					<div class="active-player">
+						<div class="avatar" id="active-avatar" aria-hidden="true">🙂</div>
+						<div><p class="player-name" id="active-name">شما</p><p class="player-role" id="active-role">بازیکن</p></div>
+					</div>
+					<div class="stats-row">
+						<div class="stat-box"><span class="stat-label">دارایی‌های من</span><strong class="stat-value" id="property-count">۰</strong></div>
+						<div class="stat-box"><span class="stat-label">ارزش دارایی</span><strong class="stat-value" id="asset-value">۰</strong></div>
+					</div>
+					<div class="opponents">
+						<div id="player-list"></div>
+					</div>
+				</section>
+				<section class="panel economy-panel" aria-labelledby="economy-title">
+					<div class="economy-heading">
+						<span class="economy-heading-icon" aria-hidden="true">🤝</span>
+						<h2 class="economy-title" id="economy-title">میز معامله</h2>
+					</div>
+					<p class="economy-copy">در نوبت خودت با بازیکنان دیگر پول یا شهر جابه‌جا کن.</p>
+					<div class="economy-actions">
+						<button class="economy-button" id="transfer-open-button" type="button" aria-haspopup="dialog" aria-controls="transfer-dialog">
+							<span class="economy-button-icon" aria-hidden="true">💸</span><span class="economy-button-label">انتقال پول</span>
+						</button>
+						<button class="economy-button" id="trade-open-button" type="button" aria-haspopup="dialog" aria-controls="trade-dialog">
+							<span class="economy-button-icon" aria-hidden="true">🏙️</span><span class="economy-button-label">معامله‌ی شهر</span>
+						</button>
+					</div>
+				</section>
+				<section class="panel chat-panel" aria-labelledby="chat-title">
+					<div class="chat-heading">
+						<span class="chat-heading-icon" aria-hidden="true">💬</span>
+						<div><h2 class="chat-title" id="chat-title">گفت‌وگوی بازیکنان</h2><p class="chat-note">چت محلی روی همین دستگاه</p></div>
+					</div>
+					<div class="chat-messages" id="chat-messages" role="log" aria-live="polite" aria-relevant="additions">
+						<p class="chat-empty" id="chat-empty">هنوز پیامی فرستاده نشده.</p>
+					</div>
+					<div class="chat-emojis" aria-label="افزودن ایموجی">
+						<button class="chat-emoji" type="button" aria-label="خنده">😂</button>
+						<button class="chat-emoji" type="button" aria-label="آفرین">👏</button>
+						<button class="chat-emoji" type="button" aria-label="آتش">🔥</button>
+						<button class="chat-emoji" type="button" aria-label="قلب">❤️</button>
+						<button class="chat-emoji" type="button" aria-label="تاج">👑</button>
+						<button class="chat-emoji" type="button" aria-label="تاس">🎲</button>
+						<button class="chat-emoji" type="button" aria-label="دست دادن">🤝</button>
+						<button class="chat-emoji" type="button" aria-label="جشن">🎉</button>
+					</div>
+					<form class="chat-form" id="chat-form">
+						<input class="chat-input" id="chat-input" type="text" maxlength="160" placeholder="پیامت را بنویس..." aria-label="متن پیام" autocomplete="off" required>
+						<button class="chat-send" type="submit">ارسال</button>
+					</form>
+				</section>
+
+			</aside>
+		</div>
+	</main>
+	<dialog class="profile-dialog" id="profile-dialog" aria-labelledby="profile-heading">
+		<form class="profile-dialog-inner" id="profile-form">
+			<h2 class="profile-heading" id="profile-heading">نام کاربری تو</h2>
+			<p class="profile-copy" id="profile-copy">نام کاربری فقط یک‌بار در همین مرورگر ذخیره می‌شود؛ برای استفاده روی دستگاه‌های دیگر به حساب آنلاین نیاز است.</p>
+			<div class="profile-fields">
+				<label class="profile-field" for="player-username">نام کاربری (۲ تا ۲۴ نویسه)
+					<input class="profile-input player-name-input" id="player-username" name="username" type="text" minlength="2" maxlength="24" autocomplete="nickname" required>
+				</label>
+			</div>
+			<div class="profile-dialog-actions">
+				<button class="action-button secondary" id="profile-cancel-button" type="button">بستن</button>
+				<button class="action-button primary" id="profile-save-button" type="submit">ذخیره‌ی همیشگی در این مرورگر</button>
+			</div>
+		</form>
+	</dialog>
+	<dialog class="economy-dialog" id="transfer-dialog" aria-labelledby="transfer-title">
+		<form class="economy-dialog-inner" id="transfer-form">
+			<h2 class="economy-dialog-title" id="transfer-title"><span aria-hidden="true">💸</span> انتقال پول</h2>
+			<p class="economy-dialog-copy">مبلغ را در نوبت خودت به یکی از بازیکنان دیگر انتقال بده.</p>
+			<label class="economy-field" for="transfer-recipient">گیرنده‌ی پول
+				<select class="economy-input" id="transfer-recipient" name="recipient" required></select>
+			</label>
+			<label class="economy-field" for="transfer-amount">مبلغ انتقال · موجودی شما <span id="transfer-balance"></span>
+				<input class="economy-input" id="transfer-amount" name="amount" type="number" min="1" step="1" required>
+			</label>
+			<p class="economy-summary" id="transfer-summary" aria-live="polite"></p>
+			<div class="economy-dialog-actions">
+				<button class="action-button secondary" id="transfer-cancel-button" type="button">انصراف</button>
+				<button class="action-button primary" type="submit">تأیید انتقال</button>
+			</div>
+		</form>
+	</dialog>
+	<dialog class="economy-dialog" id="trade-dialog" aria-labelledby="trade-title">
+		<form class="economy-dialog-inner" id="trade-form">
+			<h2 class="economy-dialog-title" id="trade-title"><span aria-hidden="true">🏙️</span> معامله‌ی شهر</h2>
+			<p class="economy-dialog-copy">یکی از بازیکنان دیگر را انتخاب کن و با او شهر معامله کن.</p>
+			<div class="profile-fields">
+				<label class="economy-field" for="trade-player">بازیکن طرف معامله
+					<select class="economy-input" id="trade-player" name="player" required></select>
+				</label>
+				<label class="economy-field" for="trade-direction">نوع معامله
+					<select class="economy-input" id="trade-direction" name="direction">
+						<option value="buy">خرید شهر حریف</option>
+						<option value="sell">فروش شهر خودم</option>
+					</select>
+				</label>
+				<label class="economy-field" for="trade-property">انتخاب شهر
+					<select class="economy-input" id="trade-property" name="property" required></select>
+				</label>
+				<label class="economy-field" for="trade-amount">مبلغ پیشنهادی
+					<input class="economy-input" id="trade-amount" name="amount" type="number" min="1" step="1" required>
+				</label>
+			</div>
+			<p class="economy-summary" id="trade-summary" aria-live="polite"></p>
+			<div class="economy-dialog-actions">
+				<button class="action-button secondary" id="trade-cancel-button" type="button">انصراف</button>
+				<button class="action-button primary" id="trade-submit-button" type="submit">ثبت پیشنهاد</button>
+			</div>
+		</form>
+	</dialog>
+	<dialog class="property-dialog" id="property-dialog" aria-labelledby="property-name">
+		<div class="property-dialog-inner">
+			<img class="property-photo" id="property-photo" alt="" loading="lazy">
+			<p class="property-photo-credit" id="property-photo-credit" hidden></p>
+			<div class="property-head">
+				<span class="property-color" id="property-color" aria-hidden="true"></span>
+				<div class="property-heading">
+					<h2 class="property-name" id="property-name"></h2>
+					<p class="property-kind" id="property-kind"></p>
+				</div>
+				<button class="property-close" id="property-close-button" type="button" aria-label="بستن جزئیات">×</button>
+			</div>
+			<div class="property-stats">
+				<div class="property-stat"><span class="property-stat-label">قیمت خرید</span><strong class="property-stat-value" id="property-price"></strong></div>
+				<div class="property-stat"><span class="property-stat-label">اجاره‌ی هر بار فرود</span><strong class="property-stat-value" id="property-rent"></strong></div>
+				<div class="property-stat" id="property-house-stat" hidden><span class="property-stat-label">خانه‌ها</span><strong class="property-stat-value" id="property-house-count"></strong></div>
+			</div>
+			<p class="property-status" id="property-status"></p>
+			<p class="property-rule" id="property-rule"></p>
+			<p class="property-photo-credit" id="property-house-tip" hidden></p>
+			<button class="action-button primary build-house-button" id="build-house-button" type="button" hidden></button>
+		</div>
+	</dialog>
+	<dialog class="info-dialog" id="help-dialog" aria-labelledby="help-title">
+		<div class="info-dialog-inner">
+			<h2 id="help-title">راهنمای سریع Monopl</h2>
+			<p>با دکمه‌ی «تاس بنداز» حرکت کن. روی هر خانه بزن تا توضیح و هزینه‌های آن را ببینی؛ خرید، اجاره و کارت‌های شانس هنگام فرود به‌صورت خودکار اجرا می‌شوند.</p>
+			<h3>خانه‌های ویژه</h3>
+			<ul>
+				<li><strong>شروع:</strong> با عبور از آن $۲۰۰ پول بازی و ۲۵ سکه‌ی فروشگاه می‌گیری.</li>
+				<li><strong>زندان:</strong> خانه‌ی «زندان» فقط محل ملاقات است. خانه‌ی «برو زندان» تو را می‌فرستد آنجا و یک نوبت از دست می‌دهی.</li>
+				<li><strong>مالیات:</strong> مبلغ درج‌شده از موجودی کم می‌شود؛ «شانس» می‌تواند پول اضافه یا هزینه بیاورد.</li>
+				<li><strong>ساخت خانه:</strong> دست‌کم دو شهر هم‌رنگ داشته باش؛ ساخت باید متوازن باشد و اجاره را بالا می‌برد.</li>
+			</ul>
+			<h3>دو حالت آنلاین</h3>
+			<p>حالت دوستان به سرور، اتاق و دعوت نیاز دارد؛ حالت تصادفی به سرور مسابقه‌یابی و پشتیبانی از قطع‌و‌وصل. این نسخه آفلاین است و این زیرساخت هنوز به پروژه وصل نشده؛ توضیح مراحل را در صفحه‌ی شروع ببین.</p>
+			<div class="info-dialog-actions"><button class="action-button" id="help-close-button" type="button">فهمیدم</button></div>
+		</div>
+	</dialog>
+	<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+	<script>
+		(() => {
+			const fa = new Intl.NumberFormat('fa-IR');
+			const tokenSkins = [
+				{ id: 'bead', name: 'مهره‌ی فیروزه', icon: '🔮', color: '#3fb49b', price: 0 },
+				{ id: 'lion', name: 'شیر پارسی', icon: '🦁', color: '#e38c56', price: 0 },
+				{ id: 'gem', name: 'گوهر', icon: '💎', color: '#7889df', price: 0 },
+				{ id: 'crown', name: 'تاج', icon: '👑', color: '#d36b91', price: 0 },
+				{ id: 'fox', name: 'روباه', icon: '🦊', color: '#d4773d', price: 80 },
+				{ id: 'panda', name: 'پاندا', icon: '🐼', color: '#526579', price: 100 },
+				{ id: 'rocket', name: 'موشک', icon: '🚀', color: '#7869d8', price: 120 },
+				{ id: 'unicorn', name: 'اسب تک‌شاخ', icon: '🦄', color: '#bd6ca5', price: 140 },
+				{ id: 'dragon', name: 'اژدها', icon: '🐉', color: '#4b9a63', price: 160 },
+				{ id: 'phoenix', name: 'ققنوس', icon: '🔥', color: '#ce604b', price: 180 }
+			];
+			const diceSkins = [
+				{ id: 'classic', name: 'کلاسیک', price: 0, colors: ['#fffefa', '#e7e8ed', '#a9b0c0', '#465b82', '#d5c49c'] },
+				{ id: 'ruby', name: 'یاقوتی', price: 90, colors: ['#fff1ef', '#e98b88', '#a83e52', '#742b40', '#f0b5aa'] },
+				{ id: 'ocean', name: 'اقیانوس', price: 100, colors: ['#effcff', '#70c4d5', '#23728f', '#15516b', '#a6e6ed'] },
+				{ id: 'forest', name: 'جنگلی', price: 120, colors: ['#f3fff1', '#8dc786', '#3d8252', '#24593a', '#b4dca8'] },
+				{ id: 'gold', name: 'طلایی', price: 130, colors: ['#fff9df', '#f1d37a', '#bd8b2d', '#79531b', '#ffe3a2'] },
+				{ id: 'amethyst', name: 'آمتیست', price: 150, colors: ['#fcf4ff', '#c89be0', '#8053aa', '#563879', '#dfc2f2'] },
+				{ id: 'neon', name: 'نئون', price: 170, colors: ['#f3fff9', '#71e2bc', '#29a7a2', '#146b78', '#b0f7d7'] },
+				{ id: 'sunset', name: 'غروب', price: 180, colors: ['#fff5e9', '#f7a86a', '#da654d', '#8d3d47', '#ffd0a0'] },
+				{ id: 'ice', name: 'یخی', price: 200, colors: ['#ffffff', '#c4e8f5', '#79abc8', '#46718f', '#e0f7ff'] },
+				{ id: 'cosmos', name: 'کیهانی', price: 220, colors: ['#f5f0ff', '#a59be9', '#6052a9', '#332b6d', '#d3ceff'] }
+			];
+			const cosmeticStorageKey = 'monopl-cosmetics-v1';
+			const defaultCosmeticState = {
+				coins: 250,
+				ownedTokens: ['bead', 'lion', 'gem', 'crown'],
+				ownedDice: ['classic'],
+				loadouts: {
+					human: { token: 'bead', dice: 'classic' },
+					player2: { token: 'lion', dice: 'classic' },
+					player3: { token: 'gem', dice: 'classic' },
+					player4: { token: 'crown', dice: 'classic' }
+				}
+			};
+			let cosmeticState = defaultCosmeticState;
+			let cosmeticPlayerIndex = 0;
+			let cosmeticKind = 'token';
+			let cosmeticStorageError = false;
+			try {
+				const storedCosmetics = window.localStorage.getItem(cosmeticStorageKey);
+				if (storedCosmetics) {
+					const parsed = JSON.parse(storedCosmetics);
+					const validTokens = new Set(tokenSkins.map((skin) => skin.id));
+					const validDice = new Set(diceSkins.map((skin) => skin.id));
+					const ownedTokens = Array.isArray(parsed.ownedTokens)
+						? [...new Set([...defaultCosmeticState.ownedTokens, ...parsed.ownedTokens.filter((id) => validTokens.has(id))])]
+						: defaultCosmeticState.ownedTokens.slice();
+					const ownedDice = Array.isArray(parsed.ownedDice)
+						? [...new Set([...defaultCosmeticState.ownedDice, ...parsed.ownedDice.filter((id) => validDice.has(id))])]
+						: defaultCosmeticState.ownedDice.slice();
+					const loadouts = Object.fromEntries(
+						Object.entries(defaultCosmeticState.loadouts).map(([playerId, loadout]) => [playerId, { ...loadout }])
+					);
+					if (parsed.loadouts && typeof parsed.loadouts === 'object') {
+						Object.keys(loadouts).forEach((playerId) => {
+							const loadout = parsed.loadouts[playerId];
+							if (!loadout || typeof loadout !== 'object') return;
+							if (ownedTokens.includes(loadout.token)) loadouts[playerId].token = loadout.token;
+							if (ownedDice.includes(loadout.dice)) loadouts[playerId].dice = loadout.dice;
+						});
+					}
+					cosmeticState = {
+						coins: Number.isSafeInteger(parsed.coins) && parsed.coins >= 0 ? parsed.coins : 250,
+						ownedTokens,
+						ownedDice,
+						loadouts
+					};
+				}
+			} catch (error) {
+				cosmeticStorageError = true;
+			}
+			const colors = {
+				coast: '#78b7ad',
+				cyan: '#79bdc9',
+				orange: '#e3a15c',
+				red: '#d87366',
+				yellow: '#e5c65f',
+				green: '#6885b5',
+				blue: '#6d88c7',
+				purple: '#9a79b8',
+				gray: '#91a39a'
+			};
+			const houseCosts = { coast: 50, cyan: 50, orange: 100, red: 100, yellow: 100, green: 150, blue: 150, purple: 150 };
+			const landmarkPhotos = {
+				qeshm: {
+					src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/3/38/Qeshm_Island%2C_Iran_%28MODIS_2021-08-21%29.jpg/960px-Qeshm_Island%2C_Iran_%28MODIS_2021-08-21%29.jpg',
+					title: 'جزیره‌ی قشم از دید ماهواره‌ی ناسا',
+					artist: 'NASA',
+					artistHref: 'https://www.nasa.gov/',
+					license: 'مالکیت عمومی',
+					licenseHref: 'https://www.usa.gov/government-copyright',
+					href: 'https://commons.wikimedia.org/wiki/File:Qeshm_Island,_Iran_(MODIS_2021-08-21).jpg'
+				},
+				isfahan: {
+					src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/3/39/Chehel_Sotoun_Palace%2C_Isfahan%2C_Iran_%2853787346012%29.jpg/960px-Chehel_Sotoun_Palace%2C_Isfahan%2C_Iran_%2853787346012%29.jpg',
+					title: 'چهل‌ستون اصفهان',
+					artist: 'Ninara',
+					artistHref: 'https://www.flickr.com/people/37583176@N00',
+					license: 'CC BY 2.0',
+					licenseHref: 'https://creativecommons.org/licenses/by/2.0/',
+					href: 'https://commons.wikimedia.org/wiki/File:Chehel_Sotoun_Palace,_Isfahan,_Iran_(53787346012).jpg'
+				},
+				tehran: {
+					src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3e/Azadi_Tower%2C_Tehran.jpg/960px-Azadi_Tower%2C_Tehran.jpg',
+					title: 'برج آزادی تهران',
+					artist: 'Bernard Gagnon',
+					artistHref: 'https://commons.wikimedia.org/wiki/User:Bgag',
+					license: 'CC BY-SA 4.0',
+					licenseHref: 'https://creativecommons.org/licenses/by-sa/4.0/',
+					href: 'https://commons.wikimedia.org/wiki/File:Azadi_Tower,_Tehran.jpg'
+				},
+				shiraz: {
+					src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1a/%D8%A8%D8%A7%D8%BA_%D8%A7%D8%B1%D9%85_%D8%B4%DB%8C%D8%B1%D8%A7%D8%B2_%D8%A7%DB%8C%D8%B1%D8%A7%D9%86-Eram_Garden_shiraz_iran_07.jpg/960px-%D8%A8%D8%A7%D8%BA_%D8%A7%D8%B1%D9%85_%D8%B4%DB%8C%D8%B1%D8%A7%D8%B2_%D8%A7%DB%8C%D8%B1%D8%A7%D9%86-Eram_Garden_shiraz_iran_07.jpg',
+					title: 'باغ ارم شیراز',
+					artist: 'Mahdikarimi70',
+					artistHref: 'https://commons.wikimedia.org/wiki/User:Mahdikarimi70',
+					license: 'CC BY-SA 4.0',
+					licenseHref: 'https://creativecommons.org/licenses/by-sa/4.0/',
+					href: 'https://commons.wikimedia.org/wiki/File:%D8%A8%D8%A7%D8%BA_%D8%A7%D8%B1%D9%85_%D8%B4%DB%8C%D8%B1%D8%A7%D8%B2_%D8%A7%DB%8C%D8%B1%D8%A7%D9%86-Eram_Garden_shiraz_iran_07.jpg'
+				},
+				mashhad: {
+					src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/5/59/Imam_Reza_shrine.jpg/960px-Imam_Reza_shrine.jpg',
+					title: 'حرم امام رضا در مشهد',
+					artist: 'Mohammad Hosein Tabatabaeian',
+					artistHref: 'https://commons.wikimedia.org/wiki/User:Mohebin14',
+					license: 'CC BY-SA 3.0',
+					licenseHref: 'https://creativecommons.org/licenses/by-sa/3.0/',
+					href: 'https://commons.wikimedia.org/wiki/File:Imam_Reza_shrine.jpg'
+				}
+			};
+			const spaces = [
+				{ type: 'start', name: 'شروع', icon: '🏁', note: '$۲۰۰' },
+				{ type: 'property', name: 'قشم', group: 'coast', price: 60, rent: 8, photo: 'qeshm' },
+				{ type: 'property', name: 'کیش', group: 'coast', price: 80, rent: 10, photo: 'qeshm' },
+				{ type: 'chance', name: 'شانس', icon: '🃏' },
+				{ type: 'company', name: 'شرکت آب', icon: '💧', companyKind: 'utility', price: 150, rent: 4 },
+				{ type: 'company', name: 'شرکت راه‌آهن', icon: '🚆', companyKind: 'railway', price: 200, rent: 25 },
+				{ type: 'property', name: 'کاشان', group: 'cyan', price: 100, rent: 12 },
+				{ type: 'property', name: 'یزد', group: 'cyan', price: 120, rent: 14 },
+				{ type: 'jail', name: 'زندان', icon: '🔒' },
+				{ type: 'property', name: 'کرمان', group: 'orange', price: 140, rent: 16 },
+				{ type: 'property', name: 'اصفهان', group: 'orange', price: 160, rent: 19, photo: 'isfahan' },
+				{ type: 'station', name: 'مترو', icon: '🚇', price: 180, rent: 25 },
+				{ type: 'property', name: 'شیراز', group: 'red', price: 180, rent: 22, photo: 'shiraz' },
+				{ type: 'property', name: 'بوشهر', group: 'red', price: 200, rent: 24 },
+				{ type: 'company', name: 'شرکت هواپیمایی', icon: '✈️', companyKind: 'airline', price: 220, rent: 40 },
+				{ type: 'chance', name: 'شانس', icon: '🃏' },
+				{ type: 'property', name: 'تبریز', group: 'yellow', price: 220, rent: 26 },
+				{ type: 'property', name: 'رشت', group: 'yellow', price: 240, rent: 28 },
+				{ type: 'tax', name: 'عوارض', icon: '🧾', amount: 100 },
+				{ type: 'property', name: 'ارومیه', group: 'green', price: 260, rent: 31 },
+				{ type: 'property', name: 'مشهد', group: 'green', price: 280, rent: 34, photo: 'mashhad' },
+				{ type: 'company', name: 'شرکت برق', icon: '⚡', companyKind: 'utility', price: 150, rent: 4 },
+				{ type: 'tax', name: 'مالیات', icon: '🧾', amount: 120 },
+				{ type: 'property', name: 'تهران', group: 'blue', price: 320, rent: 42, photo: 'tehran' },
+				{ type: 'property', name: 'کرج', group: 'blue', price: 300, rent: 38, photo: 'tehran' },
+				{ type: 'chance', name: 'شانس', icon: '🃏' },
+				{ type: 'goto-jail', name: 'برو زندان', icon: '🚔' },
+				{ type: 'property', name: 'اهواز', group: 'purple', price: 280, rent: 34 },
+				{ type: 'property', name: 'سنندج', group: 'purple', price: 260, rent: 31 },
+				{ type: 'chance', name: 'شانس', icon: '🃏' }
+			];
+			const path = [];
+			for (let col = 1; col <= 9; col += 1) path.push({ row: 1, col });
+			for (let row = 2; row <= 8; row += 1) path.push({ row, col: 9 });
+			for (let col = 8; col >= 1; col -= 1) path.push({ row: 8, col });
+			for (let row = 7; row >= 2; row -= 1) path.push({ row, col: 1 });
+
+			const profileStorageKey = 'irangard-player-names';
+			let savedPlayerNames = {};
+			let profileStorageError = false;
+			try {
+				const storedNames = window.localStorage.getItem(profileStorageKey);
+				if (storedNames) {
+					const parsedNames = JSON.parse(storedNames);
+					if (parsedNames && typeof parsedNames === 'object' && !Array.isArray(parsedNames)) savedPlayerNames = parsedNames;
+				}
+			} catch (error) {
+				profileStorageError = true;
+			}
+			const savedName = (key, fallback) => typeof savedPlayerNames[key] === 'string' && savedPlayerNames[key].trim()
+				? savedPlayerNames[key].trim().slice(0, 24)
+				: fallback;
+			const usernameStorageKey = 'monopl-player-username-v1';
+			let savedUsername = '';
+			let usernameLocked = false;
+			try {
+				const storedUsername = window.localStorage.getItem(usernameStorageKey);
+				if (storedUsername) {
+					const profile = JSON.parse(storedUsername);
+					if (profile && typeof profile.username === 'string' && profile.username.trim()) {
+						savedUsername = profile.username.trim().slice(0, 24);
+						usernameLocked = true;
+					}
+				}
+				if (!savedUsername) {
+					savedUsername = savedName('player1', savedName('human', ''));
+					usernameLocked = Boolean(savedUsername);
+				}
+			} catch (error) {
+				profileStorageError = true;
+			}
+			const playerDefaults = [
+				{ id: 'human', legacyName: 'human', name: 'بازیکن اول', icon: '🙂', color: '#3fb49b' },
+				{ id: 'player2', legacyName: 'ai', name: 'بازیکن دوم', icon: '🦊', color: '#e38c56' },
+				{ id: 'player3', name: 'بازیکن سوم', icon: '🦁', color: '#7889df' },
+				{ id: 'player4', name: 'بازیکن چهارم', icon: '🐼', color: '#d36b91' }
+			];
+			const players = playerDefaults.map((defaults, index) => ({
+				id: defaults.id,
+				name: index === 0 ? savedUsername || defaults.name : savedName(`player${index + 1}`, savedName(defaults.legacyName, defaults.name)),
+				role: `بازیکن ${fa.format(index + 1)}`,
+				icon: defaults.icon,
+				color: defaults.color,
+				money: 800,
+				position: 0,
+				properties: [],
+				skinId: cosmeticState.loadouts[defaults.id].token,
+				isAI: false,
+				jailed: false,
+				bankrupt: false,
+				houses: {}
+			}));
+			const board = document.getElementById('board');
+			const diceElement = document.getElementById('die-one');
+			const rollButton = document.getElementById('roll-button');
+			const buyButton = document.getElementById('buy-button');
+			const skipButton = document.getElementById('skip-button');
+			const endButton = document.getElementById('end-button');
+			const restartButton = document.getElementById('restart-button');
+			const messageElement = document.getElementById('action-message');
+			const logList = document.createElement('ul');
+			logList.hidden = true;
+			const toast = document.getElementById('toast');
+			const walletAmount = document.getElementById('wallet-amount');
+			const chatForm = document.getElementById('chat-form');
+			const chatInput = document.getElementById('chat-input');
+			const chatMessages = document.getElementById('chat-messages');
+			const soundToggle = document.getElementById('sound-toggle');
+			const themeButtons = {
+				dark: document.getElementById('dark-theme-button'),
+				light: document.getElementById('light-theme-button')
+			};
+			const landingScreen = document.getElementById('landing-screen');
+			const gameApp = document.getElementById('game-app');
+			const coinBalance = document.getElementById('coin-balance');
+			const cosmeticPlayerTabs = document.getElementById('cosmetic-player-tabs');
+			const tokenGrid = document.getElementById('token-grid');
+			const diceGrid = document.getElementById('dice-grid');
+			const landingContinueButton = document.getElementById('landing-continue-button');
+			const propertyDialog = document.getElementById('property-dialog');
+			const profileDialog = document.getElementById('profile-dialog');
+			const profileForm = document.getElementById('profile-form');
+			const usernameInput = document.getElementById('player-username');
+			const profileSaveButton = document.getElementById('profile-save-button');
+			const profileOpenButton = document.getElementById('profile-open-button');
+			const transferDialog = document.getElementById('transfer-dialog');
+			const transferForm = document.getElementById('transfer-form');
+			const transferRecipient = document.getElementById('transfer-recipient');
+			const transferAmountInput = document.getElementById('transfer-amount');
+			const transferSummary = document.getElementById('transfer-summary');
+			const tradeDialog = document.getElementById('trade-dialog');
+			const tradeForm = document.getElementById('trade-form');
+			const tradeDirection = document.getElementById('trade-direction');
+			const tradePlayer = document.getElementById('trade-player');
+			const tradeProperty = document.getElementById('trade-property');
+			const tradeAmountInput = document.getElementById('trade-amount');
+			const tradeSummary = document.getElementById('trade-summary');
+			let soundEnabled = true;
+			let audioContext = null;
+			let masterGain = null;
+			let noiseBuffer = null;
+			const audioContextClass = window.AudioContext || window.webkitAudioContext;
+			const state = {
+				active: 0,
+				round: 1,
+				phase: 'roll',
+				started: false,
+				lastRoll: 1,
+				offeredProperty: null,
+				dealSpaceIndex: null,
+				winner: null,
+				lastSpace: null,
+				toastTimer: null
+			};
+			let movingPlayerId = null;
+			let dealHighlightTimer = null;
+			let aiActionTimer = null;
+
+			function playSound(type) {
+				if (!soundEnabled || !audioContextClass) return;
+				if (!audioContext) {
+					try {
+						audioContext = new audioContextClass();
+						masterGain = audioContext.createGain();
+						masterGain.gain.value = 0.42;
+						const compressor = audioContext.createDynamicsCompressor();
+						compressor.threshold.value = -18;
+						compressor.knee.value = 12;
+						compressor.ratio.value = 4;
+						masterGain.connect(compressor);
+						compressor.connect(audioContext.destination);
+					} catch (error) {
+						soundEnabled = false;
+						soundToggle.textContent = '🔇';
+						soundToggle.setAttribute('aria-pressed', 'false');
+						soundToggle.setAttribute('aria-label', 'روشن کردن صدا');
+						soundToggle.title = 'صدا خاموش';
+						showToast('صدای بازی در این مرورگر در دسترس نیست.');
+						return;
+					}
+				}
+				if (audioContext.state === 'suspended') {
+					audioContext.resume().catch(() => {
+						soundEnabled = false;
+						soundToggle.textContent = '🔇';
+						soundToggle.setAttribute('aria-pressed', 'false');
+						soundToggle.setAttribute('aria-label', 'روشن کردن صدا');
+						soundToggle.title = 'صدا خاموش';
+						showToast('صدای مرورگر قابل پخش نیست.');
+					});
+				}
+
+				const sounds = {
+					click: { notes: [{ frequency: 920, duration: .045, volume: .055, wave: 'sine' }] },
+					dice: { notes: [{ frequency: 250, slideTo: 145, duration: .12, volume: .09, wave: 'triangle' }, { frequency: 470, slideTo: 270, delay: .09, duration: .14, volume: .07, wave: 'square' }], noise: { duration: .27, volume: .11, cutoff: 1100 } },
+					step: { notes: [{ frequency: 155, slideTo: 90, duration: .07, volume: .08, wave: 'triangle' }], noise: { duration: .045, volume: .055, cutoff: 850 } },
+					coin: { notes: [{ frequency: 740, duration: .13, volume: .07 }, { frequency: 990, delay: .075, duration: .17, volume: .075 }, { frequency: 1320, delay: .14, duration: .2, volume: .065 }] },
+					buy: { notes: [{ frequency: 523, duration: .19, volume: .065 }, { frequency: 659, delay: .09, duration: .2, volume: .07 }, { frequency: 784, delay: .18, duration: .23, volume: .075 }, { frequency: 1047, delay: .27, duration: .34, volume: .08 }] },
+					trade: { notes: [{ frequency: 392, duration: .2, volume: .065 }, { frequency: 494, delay: .08, duration: .22, volume: .06 }, { frequency: 587, delay: .16, duration: .28, volume: .07 }] },
+					reject: { notes: [{ frequency: 420, slideTo: 310, duration: .17, volume: .07, wave: 'triangle' }, { frequency: 285, delay: .13, duration: .22, volume: .06, wave: 'triangle' }] },
+					pay: { notes: [{ frequency: 260, slideTo: 190, duration: .18, volume: .075, wave: 'triangle' }, { frequency: 165, delay: .12, duration: .25, volume: .065, wave: 'sine' }] },
+					start: { notes: [{ frequency: 392, duration: .2, volume: .06 }, { frequency: 494, delay: .09, duration: .22, volume: .065 }, { frequency: 587, delay: .18, duration: .24, volume: .07 }, { frequency: 784, delay: .27, duration: .38, volume: .075 }] },
+					land: { notes: [{ frequency: 587, duration: .13, volume: .06 }, { frequency: 740, delay: .07, duration: .2, volume: .06 }] },
+					turn: { notes: [{ frequency: 440, duration: .15, volume: .055 }, { frequency: 587, delay: .09, duration: .22, volume: .065 }] },
+					error: { notes: [{ frequency: 230, slideTo: 175, duration: .16, volume: .08, wave: 'triangle' }, { frequency: 175, delay: .11, duration: .19, volume: .065, wave: 'triangle' }] },
+					theme: { notes: [{ frequency: 523, duration: .12, volume: .05 }, { frequency: 784, delay: .07, duration: .19, volume: .055 }] }
+				};
+				const sound = sounds[type];
+				if (!sound) return;
+				const now = audioContext.currentTime;
+				sound.notes.forEach((note) => {
+					const startAt = now + (note.delay || 0);
+					const oscillator = audioContext.createOscillator();
+					const gain = audioContext.createGain();
+					oscillator.type = note.wave || 'sine';
+					oscillator.frequency.setValueAtTime(note.frequency, startAt);
+					if (note.slideTo) oscillator.frequency.exponentialRampToValueAtTime(note.slideTo, startAt + note.duration);
+					gain.gain.setValueAtTime(.0001, startAt);
+					gain.gain.exponentialRampToValueAtTime(note.volume, startAt + .012);
+					gain.gain.exponentialRampToValueAtTime(.0001, startAt + note.duration);
+					oscillator.connect(gain);
+					gain.connect(masterGain);
+					oscillator.start(startAt);
+					oscillator.stop(startAt + note.duration + .015);
+				});
+				if (sound.noise) {
+					if (!noiseBuffer) {
+						noiseBuffer = audioContext.createBuffer(1, Math.ceil(audioContext.sampleRate * .3), audioContext.sampleRate);
+						const samples = noiseBuffer.getChannelData(0);
+						for (let index = 0; index < samples.length; index += 1) samples[index] = Math.random() * 2 - 1;
+					}
+					const source = audioContext.createBufferSource();
+					const filter = audioContext.createBiquadFilter();
+					const gain = audioContext.createGain();
+					source.buffer = noiseBuffer;
+					filter.type = 'lowpass';
+					filter.frequency.setValueAtTime(sound.noise.cutoff, now);
+					gain.gain.setValueAtTime(sound.noise.volume, now);
+					gain.gain.exponentialRampToValueAtTime(.0001, now + sound.noise.duration);
+					source.connect(filter);
+					filter.connect(gain);
+					gain.connect(masterGain);
+					source.start(now);
+					source.stop(now + sound.noise.duration);
+				}
+			}
+
+			function addChatMessage(player, text) {
+				document.getElementById('chat-empty')?.remove();
+				const message = document.createElement('article');
+				message.className = 'chat-message';
+				message.style.setProperty('--chat-color', skinForPlayer(player).color);
+				const heading = document.createElement('div');
+				heading.className = 'chat-message-head';
+				const avatar = document.createElement('span');
+				avatar.className = 'chat-message-avatar';
+				avatar.setAttribute('aria-hidden', 'true');
+				addPlayerToken(avatar, player);
+				const name = document.createElement('span');
+				name.textContent = player.name;
+				const content = document.createElement('div');
+				content.className = 'chat-message-text';
+				content.textContent = text;
+				heading.append(avatar, name);
+				message.append(heading, content);
+				chatMessages.appendChild(message);
+				while (chatMessages.children.length > 60) chatMessages.firstElementChild.remove();
+				chatMessages.scrollTop = chatMessages.scrollHeight;
+			}
+
+			chatForm.addEventListener('submit', (event) => {
+				event.preventDefault();
+				const text = chatInput.value.trim();
+				if (!text) return;
+				addChatMessage(currentPlayer(), text);
+				chatInput.value = '';
+				playSound('click');
+				chatInput.focus();
+			});
+			document.querySelectorAll('.chat-emoji').forEach((button) => {
+				button.addEventListener('click', () => {
+					chatInput.setRangeText(button.textContent, chatInput.selectionStart, chatInput.selectionEnd, 'end');
+					chatInput.focus();
+				});
+			});
+
+			function setSoundEnabled(enabled) {
+				soundEnabled = enabled && Boolean(audioContextClass);
+				soundToggle.textContent = soundEnabled ? '🔊' : '🔇';
+				soundToggle.setAttribute('aria-pressed', String(soundEnabled));
+				soundToggle.setAttribute('aria-label', soundEnabled ? 'خاموش کردن صدا' : 'روشن کردن صدا');
+				soundToggle.title = soundEnabled ? 'صدا روشن' : 'صدا خاموش';
+				if (!audioContextClass) showToast('مرورگر از صدای بازی پشتیبانی نمی‌کند.');
+				else if (soundEnabled) playSound('click');
+			}
+
+			spaces.forEach((space, index) => {
+				const tile = document.createElement('div');
+				tile.className = `space ${space.type}${[0, 8, 15, 23].includes(index) ? ' corner' : ''}`;
+				if (space.group) tile.classList.add(`group-${space.group}`);
+				tile.dataset.index = String(index);
+				tile.tabIndex = 0;
+				tile.setAttribute('role', 'button');
+				tile.setAttribute('aria-label', `${space.name}؛ نمایش جزئیات`);
+				tile.style.setProperty('--tile-index', String(index));
+				const position = path[index];
+				tile.style.gridRow = String(position.row);
+				tile.style.gridColumn = String(position.col);
+				if (space.type === 'company') tile.classList.add(`company-${space.companyKind}`);
+
+				const landmark = space.photo ? landmarkPhotos[space.photo] : null;
+				if (landmark) {
+					tile.classList.add('has-photo');
+					const image = document.createElement('img');
+					image.className = 'space-photo';
+					image.src = landmark.src;
+					image.alt = '';
+					image.loading = 'lazy';
+					image.decoding = 'async';
+					tile.appendChild(image);
+				}
+				if (space.group) {
+					const band = document.createElement('span');
+					band.className = 'property-band';
+					band.style.background = colors[space.group];
+					tile.appendChild(band);
+				}
+				if (space.icon) {
+					const icon = document.createElement('span');
+					icon.className = 'space-icon';
+					icon.setAttribute('aria-hidden', 'true');
+					icon.textContent = space.icon;
+					tile.appendChild(icon);
+				}
+				const name = document.createElement('span');
+				name.className = 'space-name';
+				name.textContent = space.name;
+				tile.appendChild(name);
+
+				if (space.price) {
+					const value = document.createElement('span');
+					value.className = 'space-value';
+					value.textContent = formatMoney(space.price);
+					tile.appendChild(value);
+				} else if (space.note) {
+					const value = document.createElement('span');
+					value.className = 'space-value';
+					value.textContent = space.note;
+					tile.appendChild(value);
+				}
+				board.appendChild(tile);
+				tile.addEventListener('click', () => showSpaceDetails(index));
+				tile.addEventListener('keydown', (event) => {
+					if (event.key !== 'Enter' && event.key !== ' ') return;
+					event.preventDefault();
+					showSpaceDetails(index);
+				});
+			});
+
+			function currentPlayer() { return players[state.active]; }
+			function isPurchasable(space) { return ['property', 'station', 'company'].includes(space.type); }
+			function formatMoney(amount) { return `$${fa.format(Math.max(0, Math.round(amount)))}`; }
+
+			function skinForPlayer(player) {
+				return tokenSkins.find((skin) => skin.id === player.skinId) || tokenSkins[0];
+			}
+
+			function diceForPlayer(player) {
+				const loadout = cosmeticState.loadouts[player.id];
+				return diceSkins.find((skin) => skin.id === loadout?.dice) || diceSkins[0];
+			}
+
+			function addPlayerToken(container, player) {
+				const skin = skinForPlayer(player);
+				container.textContent = skin.icon;
+				container.setAttribute('aria-label', skin.name);
+			}
+
+			function saveCosmeticState() {
+				try {
+					window.localStorage.setItem(cosmeticStorageKey, JSON.stringify(cosmeticState));
+				} catch (error) {
+					cosmeticStorageError = true;
+					showToast('تغییر فروشگاه در این بازی انجام شد، اما ذخیره‌ی دائمی ممکن نشد.');
+				}
+			}
+
+			function renderCosmeticStore() {
+				coinBalance.textContent = fa.format(cosmeticState.coins);
+				cosmeticPlayerTabs.replaceChildren();
+				players.forEach((player, index) => {
+					const tab = document.createElement('button');
+					tab.className = 'cosmetic-player-tab';
+					tab.type = 'button';
+					tab.setAttribute('role', 'tab');
+					tab.setAttribute('aria-selected', String(index === cosmeticPlayerIndex));
+					tab.textContent = index === 0 ? 'تو' : fa.format(index + 1);
+					tab.setAttribute('aria-label', `ظاهر ${player.name}`);
+					tab.addEventListener('click', () => {
+						cosmeticPlayerIndex = index;
+						renderCosmeticStore();
+					});
+					cosmeticPlayerTabs.appendChild(tab);
+				});
+				document.getElementById('token-kind-tab').setAttribute('aria-selected', String(cosmeticKind === 'token'));
+				document.getElementById('dice-kind-tab').setAttribute('aria-selected', String(cosmeticKind === 'dice'));
+				tokenGrid.hidden = cosmeticKind !== 'token';
+				diceGrid.hidden = cosmeticKind !== 'dice';
+				renderCosmeticItems(tokenGrid, tokenSkins, 'token');
+				renderCosmeticItems(diceGrid, diceSkins, 'dice');
+			}
+
+			function renderCosmeticItems(grid, items, kind) {
+				const player = players[cosmeticPlayerIndex];
+				const loadout = cosmeticState.loadouts[player.id];
+				const ownedItems = kind === 'token' ? cosmeticState.ownedTokens : cosmeticState.ownedDice;
+				const selectedId = kind === 'token' ? loadout.token : loadout.dice;
+				grid.replaceChildren();
+				items.forEach((item) => {
+					const owned = ownedItems.includes(item.id);
+					const selected = selectedId === item.id;
+					const card = document.createElement('button');
+					card.className = `cosmetic-card${kind === 'dice' ? ' dice-card' : ''}${selected ? ' selected' : ''}${owned ? ' owned' : ''}`;
+					card.type = 'button';
+					card.style.setProperty('--skin-color', item.color || item.colors[1]);
+					if (item.colors) {
+						card.style.setProperty('--die-light', item.colors[0]);
+						card.style.setProperty('--die-mid', item.colors[1]);
+						card.style.setProperty('--die-dark', item.colors[2]);
+						card.style.setProperty('--die-pip', item.colors[3]);
+						card.style.setProperty('--die-edge', item.colors[4]);
+					}
+					card.setAttribute('aria-pressed', String(selected));
+					card.setAttribute('aria-label', `${item.name}، ${owned ? (selected ? 'انتخاب شده' : 'انتخاب') : `${fa.format(item.price)} سکه`}`);
+					const preview = document.createElement('span');
+					preview.className = 'cosmetic-card-preview';
+					if (kind === 'token') preview.textContent = item.icon;
+					else {
+						const pips = document.createElement('span');
+						pips.className = 'die-pips';
+						for (let pipIndex = 0; pipIndex < 9; pipIndex += 1) {
+							const pip = document.createElement('i');
+							pip.className = 'die-pip';
+							pips.appendChild(pip);
+						}
+						preview.appendChild(pips);
+					}
+					const name = document.createElement('span');
+					name.className = 'cosmetic-card-name';
+					name.textContent = item.name;
+					const action = document.createElement('span');
+					action.className = 'cosmetic-card-action';
+					action.textContent = selected ? 'انتخاب‌شده' : owned ? 'انتخاب' : `${fa.format(item.price)} سکه`;
+					card.append(preview, name, action);
+					if (!owned) {
+						const lock = document.createElement('span');
+						lock.className = 'cosmetic-card-lock';
+						lock.setAttribute('aria-hidden', 'true');
+						lock.textContent = '🔒';
+						card.appendChild(lock);
+					}
+					card.addEventListener('click', () => selectCosmetic(kind, item));
+					grid.appendChild(card);
+				});
+			}
+
+			function selectCosmetic(kind, item) {
+				const ownedKey = kind === 'token' ? 'ownedTokens' : 'ownedDice';
+				if (!cosmeticState[ownedKey].includes(item.id)) {
+					if (cosmeticState.coins < item.price) {
+						showToast(`برای خرید ${item.name} به ${fa.format(item.price - cosmeticState.coins)} سکه‌ی دیگر نیاز داری.`);
+						playSound('error');
+						return;
+					}
+					cosmeticState.coins -= item.price;
+					cosmeticState[ownedKey].push(item.id);
+					showToast(`${item.name} با ${fa.format(item.price)} سکه خریداری شد.`, true);
+					playSound('buy');
+				} else {
+					playSound('click');
+					showToast(`${item.name} انتخاب شد.`);
+				}
+				const player = players[cosmeticPlayerIndex];
+				cosmeticState.loadouts[player.id][kind] = item.id;
+				if (kind === 'token') player.skinId = item.id;
+				saveCosmeticState();
+				renderCosmeticStore();
+				render();
+			}
+
+			function awardCoins(amount, reason) {
+				cosmeticState.coins += amount;
+				saveCosmeticState();
+				renderCosmeticStore();
+				log(`${reason} · +${fa.format(amount)} سکه`);
+			}
+
+			function setDiceFace(value) {
+				const orientations = [
+					'rotateX(0deg) rotateY(0deg)',
+					'rotateX(90deg) rotateY(0deg)',
+					'rotateX(0deg) rotateY(-90deg)',
+					'rotateX(0deg) rotateY(90deg)',
+					'rotateX(-90deg) rotateY(0deg)',
+					'rotateX(0deg) rotateY(180deg)'
+				];
+				diceElement.style.transform = orientations[value - 1];
+				diceElement.dataset.value = String(value);
+				diceElement.setAttribute('aria-label', `تاس با نتیجه‌ی ${fa.format(value)}`);
+			}
+
+			function setTheme(theme) {
+				playSound('theme');
+				document.body.dataset.theme = theme;
+				document.documentElement.style.colorScheme = theme;
+				Object.entries(themeButtons).forEach(([name, button]) => {
+					button.setAttribute('aria-pressed', String(name === theme));
+				});
+			}
+
+			function log(message) {
+				const item = document.createElement('li');
+				item.className = 'log-entry';
+				item.textContent = message;
+				logList.prepend(item);
+				while (logList.children.length > 7) logList.lastElementChild.remove();
+			}
+
+			function showToast(message, celebration = false) {
+				toast.textContent = message;
+				toast.classList.toggle('celebration', celebration);
+				toast.classList.add('visible');
+				window.clearTimeout(state.toastTimer);
+				state.toastTimer = window.setTimeout(() => toast.classList.remove('visible'), 2400);
+			}
+
+			function setMessage(message) {
+				const parts = message.split(/(\s+)/);
+				const content = parts.map((part, index) => {
+					if (/^\s+$/.test(part)) return document.createTextNode(part);
+					const word = document.createElement('span');
+					word.className = 'message-word';
+					word.style.setProperty('--word-index', String(index));
+					word.textContent = part;
+					return word;
+				});
+				messageElement.replaceChildren(...content);
+				messageElement.setAttribute('aria-label', message);
+			}
+
+			function updateValue(element, value) {
+				if (element.textContent === value) return;
+				element.textContent = value;
+				element.classList.remove('value-update');
+				void element.offsetWidth;
+				element.classList.add('value-update');
+			}
+
+			function setButtonVisibility(button, visible) {
+				button.hidden = !visible;
+			}
+
+			function allGroupOwned(player, group) {
+				const groupIndices = spaces.flatMap((space, index) => space.group === group ? [index] : []);
+				return groupIndices.length > 0 && groupIndices.every((index) => players.some((owner) => owner.properties.includes(index) && owner.id === player.id));
+			}
+
+			function houseCount(player, index) {
+				return player.houses[index] || 0;
+			}
+
+			function canBuildHouse(player, index) {
+				const space = spaces[index];
+				if (space.type !== 'property' || !space.group || !player.properties.includes(index)) return false;
+				const groupIndices = player.properties.filter((ownedIndex) => spaces[ownedIndex].group === space.group);
+				if (groupIndices.length < 2) return false;
+				return houseCount(player, index) < 4 &&
+					houseCount(player, index) <= Math.min(...groupIndices.map((groupIndex) => houseCount(player, groupIndex))) &&
+					player.money >= houseCosts[space.group];
+			}
+
+			function buildHouse(index) {
+				const player = currentPlayer();
+				const space = spaces[index];
+				if (!['roll', 'end'].includes(state.phase) || player.bankrupt || !canBuildHouse(player, index)) {
+					playSound('error');
+					showToast('برای ساخت خانه باید مالک همه‌ی شهرهای گروه باشی، نوبت ساخت رعایت شود و پول کافی داشته باشی.');
+					return;
+				}
+				const count = houseCount(player, index);
+				const cost = houseCosts[space.group];
+				player.money -= cost;
+				player.houses[index] = count + 1;
+				playSound('buy');
+				log(`${player.name} خانه‌ی ${fa.format(count + 1)} را در ${space.name} به قیمت ${formatMoney(cost)} ساخت.`);
+				setMessage(`${player.name} در ${space.name} خانه ساخت؛ اجاره‌ی آن به ${formatMoney(rentalPrice(index, player))} رسید.`);
+				showToast(`🏠 خانه‌ی تازه در ${space.name} ساخته شد!`, true);
+				render();
+				if (propertyDialog.open) showSpaceDetails(index);
+			}
+
+			function rentalPrice(index, owner) {
+				const space = spaces[index];
+				if (space.type === 'company' && space.companyKind === 'utility') {
+					const utilityCount = owner.properties.filter((ownedIndex) => spaces[ownedIndex].type === 'company' && spaces[ownedIndex].companyKind === 'utility').length;
+					return (state.lastRoll || 1) * (utilityCount > 1 ? 10 : 4);
+				}
+				if (space.type === 'station' || (space.type === 'company' && ['railway', 'airline'].includes(space.companyKind))) {
+					const transportCount = owner.properties.filter((ownedIndex) => {
+						const ownedSpace = spaces[ownedIndex];
+						return ownedSpace.type === 'station' || (ownedSpace.type === 'company' && ['railway', 'airline'].includes(ownedSpace.companyKind));
+					}).length;
+					return Math.round(space.rent * Math.pow(2, Math.max(0, transportCount - 1)));
+				}
+				if (space.type === 'property' && houseCount(owner, index) > 0) {
+					const houseMultipliers = [2, 4, 7, 11, 16];
+					return Math.round(space.rent * houseMultipliers[houseCount(owner, index)]);
+				}
+				return Math.round(space.rent * (space.group && allGroupOwned(owner, space.group) ? 2 : 1));
+			}
+
+			function showSpaceDetails(index) {
+				const space = spaces[index];
+				propertyDialog.dataset.spaceIndex = String(index);
+				const owner = players.find((player) => player.properties.includes(index));
+				const isProperty = isPurchasable(space);
+				document.getElementById('property-name').textContent = space.name;
+				document.getElementById('property-kind').textContent = space.type === 'property'
+					? 'شهر ایرانی'
+					: space.type === 'station' ? 'مسیر حمل‌ونقل'
+						: space.type === 'company' ? (space.companyKind === 'utility' ? 'شرکت خدمات شهری' : 'شرکت حمل‌ونقل')
+							: 'خانه‌ی ویژه';
+				const photo = space.photo ? landmarkPhotos[space.photo] : null;
+				const photoElement = document.getElementById('property-photo');
+				const photoCredit = document.getElementById('property-photo-credit');
+				if (photo) {
+					photoElement.src = photo.src;
+					photoElement.alt = photo.title;
+					photoElement.classList.add('is-visible');
+					photoCredit.replaceChildren();
+					photoCredit.append(document.createTextNode('عکس: '));
+					const artistLink = document.createElement('a');
+					artistLink.href = photo.artistHref;
+					artistLink.target = '_blank';
+					artistLink.rel = 'noopener noreferrer';
+					artistLink.textContent = photo.artist;
+					const licenseLink = document.createElement('a');
+					licenseLink.href = photo.licenseHref;
+					licenseLink.target = '_blank';
+					licenseLink.rel = 'noopener noreferrer';
+					licenseLink.textContent = photo.license;
+					const sourceLink = document.createElement('a');
+					sourceLink.href = photo.href;
+					sourceLink.target = '_blank';
+					sourceLink.rel = 'noopener noreferrer';
+					sourceLink.textContent = 'صفحه‌ی عکس';
+					photoCredit.append(artistLink, document.createTextNode(' · '), licenseLink, document.createTextNode(' · '), sourceLink);
+					photoCredit.hidden = false;
+				} else {
+					photoElement.removeAttribute('src');
+					photoElement.alt = '';
+					photoElement.classList.remove('is-visible');
+					photoCredit.replaceChildren();
+					photoCredit.hidden = true;
+				}
+				const color = space.group ? colors[space.group] : owner ? owner.color : '#73a998';
+				document.getElementById('property-color').style.background = color;
+				document.getElementById('property-color').style.color = color;
+				document.getElementById('property-price').textContent = isProperty ? formatMoney(space.price) : '—';
+				const baseRent = space.companyKind === 'utility' ? '۴ یا ۱۰ برابر تاس' : formatMoney(space.rent);
+				document.getElementById('property-rent').textContent = isProperty
+					? owner ? formatMoney(rentalPrice(index, owner)) : baseRent
+					: '—';
+				const houseStat = document.getElementById('property-house-stat');
+				const houseTip = document.getElementById('property-house-tip');
+				const buildButton = document.getElementById('build-house-button');
+				const propertyHouseCount = space.type === 'property' && owner ? houseCount(owner, index) : 0;
+				houseStat.hidden = space.type !== 'property';
+				document.getElementById('property-house-count').textContent = `${fa.format(propertyHouseCount)} از ۴`;
+				const canManageHouses = space.type === 'property' && owner === currentPlayer() && Boolean(space.group);
+				buildButton.hidden = !canManageHouses;
+				houseTip.hidden = !canManageHouses;
+				if (canManageHouses) {
+					const groupIndices = owner.properties.filter((ownedIndex) => spaces[ownedIndex].group === space.group);
+					const lowestCount = Math.min(...groupIndices.map((groupIndex) => houseCount(owner, groupIndex)));
+					const hasBuildableGroup = groupIndices.length >= 2;
+					const balanced = propertyHouseCount <= lowestCount;
+					const affordable = owner.money >= houseCosts[space.group];
+					const inBuildPhase = ['roll', 'end'].includes(state.phase);
+					buildButton.disabled = !hasBuildableGroup || !balanced || propertyHouseCount >= 4 || !affordable || !inBuildPhase;
+					buildButton.textContent = propertyHouseCount >= 4
+						? 'حداکثر ۴ خانه ساخته شده'
+						: `ساخت خانه · ${formatMoney(houseCosts[space.group])}`;
+					houseTip.textContent = !hasBuildableGroup
+						? 'برای ساخت، مالک دست‌کم دو شهر هم‌رنگ باش.'
+						: !balanced
+							? 'ساخت باید بین شهرهای گروه به‌صورت متوازن انجام شود.'
+							: propertyHouseCount >= 4
+								? 'برای هر شهر حداکثر ۴ خانه می‌توان ساخت.'
+								: !affordable
+									? `موجودی کافی نیست؛ هزینه‌ی ساخت ${formatMoney(houseCosts[space.group])} است.`
+									: !inBuildPhase
+										? 'ساخت خانه پس از پایان حرکت و در نوبت بازیکن ممکن است.'
+											: 'هزینه از موجودی کم می‌شود؛ خانه‌ی اول اجاره را ۴ برابر اجاره‌ی پایه می‌کند.';
+				} else {
+					houseTip.textContent = '';
+				}
+				const status = !isProperty
+					? 'این خانه شهر قابل خرید نیست؛ با توجه به نوع خانه، اثر ویژه‌ی خودش را دارد.'
+					: owner
+						? owner.id === 'human'
+							? 'این شهر برای شماست. اگر بازیکن دیگری روی آن فرود بیاید، اجاره به‌صورت خودکار به موجودی‌ات اضافه می‌شود.'
+							: `این شهر در مالکیت ${owner.name} است. اگر روی آن فرود بیایی، اجاره‌ی نمایش‌داده‌شده را خودکار پرداخت می‌کنی.`
+						: 'این شهر هنوز مالک ندارد. هنگام فرود روی آن، پیشنهاد خرید نمایش داده می‌شود.';
+				document.getElementById('property-status').textContent = status;
+				document.getElementById('property-rule').textContent = spaceRule(space);
+				playSound('click');
+				if (!propertyDialog.open) propertyDialog.showModal();
+			}
+
+			function spaceRule(space) {
+				if (space.type === 'start') return 'با عبور از شروع $۲۰۰ از بانک می‌گیری؛ با فرود دقیق روی آن جایزه‌ی عبور دوباره داده نمی‌شود.';
+				if (space.type === 'jail') return 'فقط به ملاقات زندان آمده‌ای؛ اتفاقی نمی‌افتد و نوبتت را از دست نمی‌دهی.';
+				if (space.type === 'goto-jail') return 'مستقیم به خانه‌ی زندان می‌روی و نوبت بعدی‌ات را از دست می‌دهی.';
+				if (space.type === 'tax') return `${formatMoney(space.amount)} مالیات است و همان لحظه از موجودی‌ات کم می‌شود.`;
+				if (space.type === 'chance') return 'یک کارت شانس تصادفی می‌کشی؛ ممکن است پول بگیری یا هزینه‌ای پرداخت کنی.';
+				if (space.type === 'property') return 'هنگام فرود می‌توانی شهر را بخری. اگر همه‌ی شهرهای هم‌رنگ را داشته باشی اجاره‌ی پایه دو برابر می‌شود؛ هر خانه اجاره را بیشتر می‌کند.';
+				if (space.type === 'station') return 'با خرید مسیر حمل‌ونقل، بازیکنان دیگر هنگام فرود اجاره می‌دهند؛ با مالکیت مسیرهای بیشتر، اجاره افزایش می‌یابد.';
+				if (space.type === 'company') return space.companyKind === 'utility'
+					? 'شرکت خدماتی اجاره‌ی ثابت ندارد؛ مالکیت یک شرکت یعنی ۴ برابر نتیجه‌ی تاس و دو شرکت یعنی ۱۰ برابر آن.'
+					: 'شرکت حمل‌ونقل اجاره می‌گیرد و مالکیت مسیرهای بیشتری از این نوع، آن را افزایش می‌دهد.';
+				return 'این خانه اثر ویژه‌ای در بازی ندارد.';
+			}
+
+			function renderBoard() {
+				board.querySelectorAll('.space').forEach((tile) => {
+					tile.classList.remove('active-space');
+					tile.classList.remove('movement-step');
+					tile.classList.toggle('deal-complete', Number(tile.dataset.index) === state.dealSpaceIndex);
+					tile.querySelectorAll('.owner-dot, .piece-stack, .house-indicator').forEach((node) => node.remove());
+				});
+
+				players.forEach((player) => {
+					if (player.bankrupt) return;
+					const tile = board.querySelector(`[data-index="${player.position}"]`);
+					if (!tile) return;
+					tile.classList.add('active-space');
+					if (player.id === movingPlayerId) tile.classList.add('movement-step');
+					const stack = tile.querySelector('.piece-stack') || document.createElement('span');
+					stack.className = 'piece-stack';
+					const piece = document.createElement('span');
+					piece.className = `piece${player.id === movingPlayerId ? ' is-moving' : ''}`;
+					const skin = skinForPlayer(player);
+					piece.dataset.skin = skin.id;
+					const pieceColor = skin.color;
+					piece.style.background = `radial-gradient(circle at 30% 22%,rgba(255,255,255,.7),transparent 35%),linear-gradient(145deg,${pieceColor},${pieceColor} 58%,rgba(0,0,0,.3))`;
+					piece.style.boxShadow = `0 2px 5px rgba(0,0,0,.32),0 0 9px ${pieceColor}99,inset 0 1px rgba(255,255,255,.55)`;
+					piece.setAttribute('aria-label', player.name);
+					addPlayerToken(piece, player);
+					stack.appendChild(piece);
+					tile.appendChild(stack);
+				});
+
+				players.forEach((owner) => {
+					owner.properties.forEach((index) => {
+						const tile = board.querySelector(`[data-index="${index}"]`);
+						if (!tile) return;
+						const dot = document.createElement('span');
+						dot.className = 'owner-dot';
+						dot.style.background = owner.color;
+						dot.title = owner.name;
+						tile.appendChild(dot);
+						const houses = houseCount(owner, index);
+						if (houses > 0) {
+							const indicator = document.createElement('span');
+							indicator.className = 'house-indicator';
+							indicator.textContent = `⌂ ${fa.format(houses)}`;
+							indicator.setAttribute('aria-label', `${fa.format(houses)} خانه`);
+							tile.appendChild(indicator);
+						}
+					});
+				});
+
+				renderBoardCornerPlayers();
+			}
+
+			function renderBoardCornerPlayers() {
+				const topRow = document.getElementById('board-player-corners-top');
+				const bottomRow = document.getElementById('board-player-corners-bottom');
+				topRow.replaceChildren();
+				bottomRow.replaceChildren();
+				[topRow, bottomRow].forEach((row, rowIndex) => {
+					const rowPlayers = rowIndex === 0 ? players.slice(0, 2) : players.slice(2).reverse();
+					rowPlayers.forEach((player) => {
+						const isActive = state.phase !== 'ended' && currentPlayer().id === player.id;
+						const skin = skinForPlayer(player);
+						const color = skin.color;
+						const card = document.createElement('div');
+						card.className = `board-corner-player${isActive ? ' is-turn' : ''}`;
+						card.style.setProperty('--player-color', color);
+						card.setAttribute('aria-label', `${player.name}، ${isActive ? 'نوبت فعال' : 'منتظر نوبت'}، موجودی ${formatMoney(player.money)}`);
+						const avatar = document.createElement('span');
+						avatar.className = 'board-corner-avatar';
+						avatar.setAttribute('aria-hidden', 'true');
+						addPlayerToken(avatar, player);
+						const copy = document.createElement('span');
+						copy.className = 'board-corner-copy';
+						const name = document.createElement('span');
+						name.className = 'board-corner-name';
+						name.textContent = player.name;
+						const status = document.createElement('span');
+						status.className = 'board-corner-status';
+						status.textContent = isActive ? 'نوبتِ این بازیکن' : 'آماده‌ی بازی';
+						const balance = document.createElement('span');
+						balance.className = 'board-corner-balance';
+						balance.textContent = formatMoney(player.money);
+						copy.append(name, status);
+						card.append(avatar, copy, balance);
+						row.appendChild(card);
+					});
+				});
+			}
+
+			function propertyValue(player) {
+				const propertyTotal = player.properties.reduce((total, index) => total + spaces[index].price, 0);
+				const houseTotal = Object.entries(player.houses).reduce((total, [index, count]) => {
+					const space = spaces[Number(index)];
+					return total + (space?.group ? houseCosts[space.group] * count : 0);
+				}, 0);
+				return propertyTotal + houseTotal;
+			}
+
+			function renderPlayers() {
+				const player = currentPlayer();
+				const turnLabel = document.getElementById('turn-label');
+				turnLabel.textContent = state.phase === 'ended' ? 'بازی تمام شد' : `نوبت ${player.name}`;
+				if (state.phase === 'ended') turnLabel.removeAttribute('data-player');
+				else turnLabel.dataset.player = player.id;
+				const playerList = document.getElementById('player-list');
+				playerList.replaceChildren();
+				players.forEach((entry) => {
+					const card = document.createElement('div');
+					card.className = `opponent${state.phase !== 'ended' && entry.id === player.id ? ' is-active-turn' : ''}`;
+					card.dataset.playerId = entry.id;
+					const avatar = document.createElement('div');
+					avatar.className = 'opponent-avatar';
+					avatar.style.background = skinForPlayer(entry).color;
+					avatar.setAttribute('aria-hidden', 'true');
+					addPlayerToken(avatar, entry);
+					const details = document.createElement('div');
+					const name = document.createElement('div');
+					name.className = 'opponent-name';
+					name.textContent = entry.name;
+					const cash = document.createElement('div');
+					cash.className = 'opponent-cash';
+					cash.textContent = formatMoney(entry.money);
+					const turnFlag = document.createElement('span');
+					turnFlag.className = 'turn-flag';
+					turnFlag.textContent = 'نوبت این بازیکن';
+					details.append(name, cash, turnFlag);
+					card.append(avatar, details);
+					playerList.appendChild(card);
+				});
+				const activeSkin = skinForPlayer(player);
+				const activeAvatar = document.getElementById('active-avatar');
+				activeAvatar.style.background = activeSkin.color;
+				activeAvatar.style.boxShadow = `0 5px 15px rgba(0,0,0,.18),0 0 18px ${activeSkin.color}88,inset 0 1px rgba(255,255,255,.62)`;
+				addPlayerToken(activeAvatar, player);
+				const activeDice = diceForPlayer(player);
+				['--die-light', '--die-mid', '--die-dark', '--die-pip', '--die-edge'].forEach((property, index) => {
+					diceElement.style.setProperty(property, activeDice.colors[index]);
+				});
+				diceElement.dataset.skin = activeDice.id;
+				document.getElementById('active-name').textContent = player.name;
+				document.getElementById('active-role').textContent = player.role;
+				updateValue(document.getElementById('property-count'), fa.format(player.properties.length));
+				updateValue(document.getElementById('asset-value'), formatMoney(propertyValue(player)));
+				updateValue(walletAmount, formatMoney(player.money));
+				document.getElementById('wallet-caption').textContent = `موجودی ${player.name}`;
+				document.getElementById('wallet-hud').setAttribute('aria-label', `موجودی ${player.name}`);
+				updateValue(document.getElementById('round-number'), fa.format(state.round));
+				updateValue(document.getElementById('center-round'), fa.format(state.round));
+			}
+
+			function render() {
+				renderPlayers();
+				renderBoard();
+				const activePlayer = currentPlayer();
+				const canManageEconomy = ['roll', 'buy', 'end'].includes(state.phase) && !activePlayer.bankrupt;
+				document.getElementById('transfer-open-button').disabled = !canManageEconomy || activePlayer.money < 1 || players.filter((entry) => entry.id !== activePlayer.id && !entry.bankrupt).length === 0;
+				document.getElementById('trade-open-button').disabled = !canManageEconomy || !players.some((entry) => entry.id !== activePlayer.id && !entry.bankrupt && entry.properties.length > 0);
+				rollButton.textContent = state.started ? '🎲　تاس بنداز' : '🎲　شروع بازی';
+				rollButton.disabled = state.phase !== 'roll' || activePlayer.bankrupt || activePlayer.isAI;
+				setButtonVisibility(rollButton, state.phase === 'roll');
+				setButtonVisibility(buyButton, state.phase === 'buy');
+				buyButton.disabled = activePlayer.isAI || (state.phase === 'buy' && state.offeredProperty !== null && activePlayer.money < spaces[state.offeredProperty].price);
+				setButtonVisibility(skipButton, state.phase === 'buy');
+				skipButton.disabled = activePlayer.isAI;
+				setButtonVisibility(endButton, state.phase === 'end');
+				endButton.disabled = activePlayer.isAI;
+				setButtonVisibility(restartButton, state.phase === 'ended');
+				if (state.phase === 'buy' && state.offeredProperty !== null) {
+					const property = spaces[state.offeredProperty];
+					buyButton.innerHTML = `خرید ${property.name}<span class="button-cost">${formatMoney(property.price)}</span>`;
+					buyButton.disabled = currentPlayer().isAI || currentPlayer().money < property.price;
+				}
+			}
+
+			function selectedTradePlayer() {
+				return players.find((player) => player.id === tradePlayer.value && player.id !== currentPlayer().id && !player.bankrupt) || null;
+			}
+
+			function populatePlayerOptions(select, excludedPlayer, preferredPlayer) {
+				select.replaceChildren();
+				players.filter((player) => player.id !== excludedPlayer.id && !player.bankrupt).forEach((player) => {
+					const option = document.createElement('option');
+					option.value = player.id;
+					option.textContent = player.name;
+					select.appendChild(option);
+				});
+				if (preferredPlayer && [...select.options].some((option) => option.value === preferredPlayer.id)) {
+					select.value = preferredPlayer.id;
+				}
+			}
+
+			function tradeFairPrice(index, owner) {
+				const property = spaces[index];
+				const matches = owner.properties.filter((ownedIndex) => {
+					const ownedSpace = spaces[ownedIndex];
+					if (ownedIndex === index) return false;
+					if (property.group) return ownedSpace.group === property.group;
+					if (property.type === 'company' && property.companyKind === 'utility') {
+						return ownedSpace.type === 'company' && ownedSpace.companyKind === 'utility';
+					}
+					const isTransport = property.type === 'station' || (property.type === 'company' && ['railway', 'airline'].includes(property.companyKind));
+					return isTransport && (ownedSpace.type === 'station' || (ownedSpace.type === 'company' && ['railway', 'airline'].includes(ownedSpace.companyKind)));
+				}).length;
+				return Math.ceil(property.price * (1.2 + Math.min(matches, 2) * .05));
+			}
+
+			function liquidateGroupHouses(owner, group) {
+				if (!group) return 0;
+				let refund = 0;
+				spaces.forEach((space, index) => {
+					if (space.group !== group) return;
+					const count = houseCount(owner, index);
+					if (count > 0) {
+						refund += Math.floor(houseCosts[group] * count / 2);
+						delete owner.houses[index];
+					}
+				});
+				owner.money += refund;
+				return refund;
+			}
+
+			function updateTransferSummary() {
+				const amount = Number(transferAmountInput.value);
+				const sender = currentPlayer();
+				const recipient = players.find((player) => player.id === transferRecipient.value);
+				transferSummary.removeAttribute('data-state');
+				if (!recipient) {
+					transferSummary.textContent = 'یک گیرنده برای انتقال انتخاب کن.';
+					return;
+				}
+				if (!Number.isInteger(amount) || amount < 1) {
+					transferSummary.textContent = 'مبلغ انتقال را به دلار وارد کن.';
+					return;
+				}
+				if (amount > sender.money) {
+					transferSummary.dataset.state = 'error';
+					transferSummary.textContent = `موجودی کافی نیست؛ حداکثر می‌توانی ${formatMoney(sender.money)} انتقال بدهی.`;
+					return;
+				}
+				transferSummary.textContent = `${formatMoney(amount)} از کیف پول ${sender.name} به موجودی ${recipient.name} می‌رود.`;
+			}
+
+			function updateTradeSummary() {
+				const index = Number(tradeProperty.value);
+				const property = spaces[index];
+				const direction = tradeDirection.value;
+				const activePlayer = currentPlayer();
+				const otherPlayer = selectedTradePlayer();
+				tradeSummary.removeAttribute('data-state');
+				if (!otherPlayer) {
+					tradeSummary.textContent = 'بازیکن دیگری برای معامله در دسترس نیست.';
+					return;
+				}
+				if (!property || !Number.isInteger(index)) {
+					tradeSummary.textContent = direction === 'buy'
+						? `${otherPlayer.name} شهری برای فروش ندارد.`
+						: `هنوز شهری نداری که به ${otherPlayer.name} پیشنهاد بدهی.`;
+					return;
+				}
+				const fairPrice = tradeFairPrice(index, direction === 'buy' ? otherPlayer : activePlayer);
+				const amount = Number(tradeAmountInput.value);
+				const available = direction === 'buy' ? activePlayer.money : otherPlayer.money;
+				tradeAmountInput.max = String(available);
+				if (direction === 'buy') {
+					tradeSummary.textContent = `${otherPlayer.name} برای ${property.name} دست‌کم ${formatMoney(fairPrice)} می‌خواهد؛ موجودی تو ${formatMoney(activePlayer.money)} است.`;
+					if (Number.isInteger(amount) && amount > activePlayer.money) {
+						tradeSummary.dataset.state = 'error';
+						tradeSummary.textContent = 'مبلغ پیشنهادی از موجودی شما بیشتر است.';
+					} else if (Number.isInteger(amount) && amount >= 1 && amount < fairPrice) {
+						tradeSummary.dataset.state = 'error';
+						tradeSummary.textContent = `پیشنهاد باید حداقل ${formatMoney(fairPrice)} باشد تا ${otherPlayer.name} قبول کند.`;
+					}
+				} else {
+					tradeSummary.textContent = `${otherPlayer.name} برای ${property.name} تا ${formatMoney(fairPrice)} می‌پردازد؛ موجودی او ${formatMoney(otherPlayer.money)} است.`;
+					if (Number.isInteger(amount) && amount > otherPlayer.money) {
+						tradeSummary.dataset.state = 'error';
+						tradeSummary.textContent = `${otherPlayer.name} این‌قدر پول ندارد؛ مبلغ کم‌تری پیشنهاد بده.`;
+					} else if (Number.isInteger(amount) && amount > fairPrice) {
+						tradeSummary.dataset.state = 'error';
+						tradeSummary.textContent = `${otherPlayer.name} حداکثر ${formatMoney(fairPrice)} برای این شهر می‌پردازد.`;
+					}
+				}
+			}
+
+			function populateTradeProperties(useSuggestedAmount = false) {
+				const direction = tradeDirection.value;
+				const otherPlayer = selectedTradePlayer();
+				const owner = direction === 'buy' ? otherPlayer : currentPlayer();
+				const previousIndex = tradeProperty.value;
+				const ownedSpaces = owner ? owner.properties.filter((index) => isPurchasable(spaces[index])) : [];
+				tradeProperty.replaceChildren();
+				ownedSpaces.forEach((index) => {
+					const property = spaces[index];
+					const option = document.createElement('option');
+					option.value = String(index);
+					option.textContent = `${property.name} · ارزش ${formatMoney(property.price)} · اجاره ${formatMoney(property.rent)}`;
+					tradeProperty.appendChild(option);
+				});
+				tradeProperty.disabled = ownedSpaces.length === 0;
+				document.getElementById('trade-submit-button').disabled = ownedSpaces.length === 0;
+				if (ownedSpaces.includes(Number(previousIndex))) tradeProperty.value = previousIndex;
+				if (ownedSpaces.length > 0 && (useSuggestedAmount || !tradeAmountInput.value)) {
+					const index = Number(tradeProperty.value);
+					const suggested = tradeFairPrice(index, owner);
+					tradeAmountInput.value = String(suggested);
+				}
+				tradeAmountInput.min = '1';
+				tradeAmountInput.max = String(direction === 'buy' ? currentPlayer().money : otherPlayer?.money || 0);
+				updateTradeSummary();
+			}
+
+			function highlightDealSpace(index) {
+				state.dealSpaceIndex = index;
+				window.clearTimeout(dealHighlightTimer);
+				renderBoard();
+				dealHighlightTimer = window.setTimeout(() => {
+					state.dealSpaceIndex = null;
+					renderBoard();
+				}, 1500);
+			}
+
+			function transferMoney(amount) {
+				const sender = currentPlayer();
+				const recipient = players.find((player) => player.id === transferRecipient.value && player.id !== sender.id && !player.bankrupt);
+				if (!['roll', 'buy', 'end'].includes(state.phase) || sender.bankrupt || !recipient || !Number.isInteger(amount) || amount < 1 || amount > sender.money) {
+					playSound('error');
+					showToast('انتقال انجام نشد؛ نوبت یا مبلغ را بررسی کن.');
+					return false;
+				}
+				sender.money -= amount;
+				recipient.money += amount;
+				playSound('trade');
+				log(`${sender.name} مبلغ ${formatMoney(amount)} به ${recipient.name} انتقال داد.`);
+				setMessage(`${sender.name} مبلغ ${formatMoney(amount)} به ${recipient.name} انتقال داد.`);
+				render();
+				showToast(`💸 ${formatMoney(amount)} با موفقیت به ${recipient.name} رسید.`, true);
+				return true;
+			}
+
+			function submitPropertyTrade(index, amount, direction) {
+				const property = spaces[index];
+				const human = currentPlayer();
+				const otherPlayer = selectedTradePlayer();
+				const owner = players.find((player) => player.properties.includes(index));
+				const expectedOwner = direction === 'buy' ? otherPlayer : human;
+				if (!['roll', 'buy', 'end'].includes(state.phase) || human.bankrupt || !otherPlayer || !property || !isPurchasable(property) || owner !== expectedOwner || !Number.isInteger(amount) || amount < 1) {
+					playSound('error');
+					showToast('این معامله دیگر در دسترس نیست؛ فهرست شهرها را دوباره بررسی کن.');
+					populateTradeProperties(true);
+					return false;
+				}
+				const fairPrice = tradeFairPrice(index, direction === 'buy' ? otherPlayer : human);
+				if (direction === 'buy') {
+					if (amount > human.money) {
+						tradeSummary.dataset.state = 'error';
+						tradeSummary.textContent = 'موجودی شما برای این پیشنهاد کافی نیست.';
+						playSound('error');
+						return false;
+					}
+					if (amount < fairPrice) {
+						tradeSummary.dataset.state = 'error';
+						tradeSummary.textContent = `${otherPlayer.name} پیشنهاد را نپذیرفت؛ حداقل قیمت این شهر ${formatMoney(fairPrice)} است.`;
+						playSound('reject');
+						return false;
+					}
+					human.money -= amount;
+					otherPlayer.money += amount;
+					const houseRefund = liquidateGroupHouses(otherPlayer, property.group);
+					otherPlayer.properties = otherPlayer.properties.filter((ownedIndex) => ownedIndex !== index);
+					human.properties.push(index);
+					if (houseRefund > 0) log(`${otherPlayer.name} بابت فروش خانه‌های گروه ${property.group}، ${formatMoney(houseRefund)} از بانک پس گرفت.`);
+					log(`${human.name} شهر ${property.name} را با پرداخت ${formatMoney(amount)} از ${otherPlayer.name} خرید.`);
+					setMessage(`${human.name} شهر ${property.name} را از ${otherPlayer.name} خرید!`);
+					showToast(`🏙️ شهر ${property.name} به نام تو شد!`, true);
+				} else {
+					if (amount > otherPlayer.money) {
+						tradeSummary.dataset.state = 'error';
+						tradeSummary.textContent = `موجودی ${otherPlayer.name} برای پرداخت این مبلغ کافی نیست.`;
+						playSound('error');
+						return false;
+					}
+					if (amount > fairPrice) {
+						tradeSummary.dataset.state = 'error';
+						tradeSummary.textContent = `${otherPlayer.name} پیشنهاد را نپذیرفت؛ حداکثر پیشنهادش ${formatMoney(fairPrice)} است.`;
+						playSound('reject');
+						return false;
+					}
+					human.money += amount;
+					otherPlayer.money -= amount;
+					const houseRefund = liquidateGroupHouses(human, property.group);
+					human.properties = human.properties.filter((ownedIndex) => ownedIndex !== index);
+					otherPlayer.properties.push(index);
+					if (houseRefund > 0) log(`${human.name} بابت فروش خانه‌های گروه ${property.group}، ${formatMoney(houseRefund)} از بانک پس گرفت.`);
+					log(`${human.name} شهر ${property.name} را در برابر ${formatMoney(amount)} به ${otherPlayer.name} فروخت.`);
+					setMessage(`${human.name} شهر ${property.name} را در برابر ${formatMoney(amount)} به ${otherPlayer.name} فروخت.`);
+					showToast(`🤝 ${property.name} با موفقیت معامله شد.`, true);
+				}
+				playSound('trade');
+				tradeDialog.close();
+				render();
+				highlightDealSpace(index);
+				return true;
+			}
+
+			function addMoney(player, amount, reason) {
+				player.money += amount;
+				playSound(amount >= 0 ? 'coin' : 'pay');
+				log(`${player.name}: ${reason} · ${amount >= 0 ? '+' : ''}${formatMoney(amount)}`);
+				if (player.money < 0) {
+					player.money = 0;
+					player.bankrupt = true;
+					player.properties = [];
+					player.houses = {};
+					const remainingPlayers = players.filter((candidate) => !candidate.bankrupt);
+					if (remainingPlayers.length === 1) {
+						state.winner = remainingPlayers[0];
+						state.active = players.indexOf(state.winner);
+						state.phase = 'ended';
+						if (state.winner.id === 'human') {
+							awardCoins(100, 'جایزه‌ی پیروزی');
+							showToast('🏆 برنده شدی! ۱۰۰ سکه جایزه گرفتی.', true);
+						}
+						setMessage(`${player.name} ورشکسته شد؛ ${state.winner.name} برنده‌ی بازی است!`);
+						log(`🏆 ${state.winner.name} برنده‌ی Monopl شد!`);
+						if (state.winner.id !== 'human') showToast(`🏆 ${state.winner.name} برنده شد!`);
+					} else {
+						state.phase = 'end';
+						setMessage(`${player.name} ورشکسته شد و از بازی خارج شد.`);
+						log(`${player.name} از بازی خارج شد؛ بازی ادامه دارد.`);
+					}
+				}
+			}
+
+			function transferRent(tenant, owner, index) {
+				const property = spaces[index];
+				const rent = rentalPrice(index, owner);
+				const paid = Math.min(tenant.money, rent);
+				tenant.money -= paid;
+				owner.money += paid;
+				playSound('pay');
+				log(`${tenant.name} بابت اجاره‌ی ${property.name}، ${formatMoney(paid)} به ${owner.name} داد.`);
+				setMessage(`${tenant.name} روی ${property.name} فرود آمد و ${formatMoney(paid)} اجاره پرداخت کرد.`);
+				if (paid < rent) {
+					tenant.money = -1;
+					addMoney(tenant, 0, 'تسویه‌ی حساب');
+				}
+			}
+
+			function drawChance(player) {
+				const cards = [
+					{ text: 'جایزه‌ی جشنواره‌ی محلی! $۱۰۰ گرفتی.', amount: 100 },
+					{ text: 'برای تعمیر خانه $۸۰ پرداخت کن.', amount: -80 },
+					{ text: 'سفرت به خیر! از بانک $۵۰ هدیه گرفتی.', amount: 50 },
+					{ text: 'کمک به پاکیزگی شهرها: $۵۰ کمک کردی.', amount: -50 },
+					{ text: 'سود سرمایه‌گذاری‌ات رسید: $۱۲۰ گرفتی.', amount: 120 },
+					{ text: 'هزینه‌ی جاده و سفر: $۷۰ پرداخت کن.', amount: -70 }
+				];
+				const card = cards[Math.floor(Math.random() * cards.length)];
+				playSound('land');
+				setMessage(`🃏 ${card.text}`);
+				addMoney(player, card.amount, card.amount >= 0 ? 'کارت شانس' : 'کارت هزینه');
+				log(`${player.name} کارت شانس برداشت.`);
+			}
+
+			function resolveLanding(player, previousPosition) {
+				const index = player.position;
+				const space = spaces[index];
+				playSound('land');
+				state.lastSpace = index;
+				if (isPurchasable(space)) {
+					const owner = players.find((candidate) => candidate.properties.includes(index));
+					if (owner && owner.id !== player.id) {
+						transferRent(player, owner, index);
+						return finishLanding(player);
+					}
+					if (owner && owner.id === player.id) {
+						setMessage(`به ${space.name} خودت رسیدی؛ از بازدید شهرت لذت ببر!`);
+						return finishLanding(player);
+					}
+					state.offeredProperty = index;
+					state.phase = 'buy';
+					setMessage(`${space.name} هنوز صاحب ندارد. ${player.name} می‌تواند با ${formatMoney(space.price)} مالکش شود؛ اجاره‌ی پایه ${space.companyKind === 'utility' ? '۴ یا ۱۰ برابر تاس' : formatMoney(space.rent)} است.`);
+					render();
+					scheduleAIAction();
+					return;
+				}
+
+				switch (space.type) {
+					case 'start':
+						playSound('start');
+						setMessage(`${player.name} به خانه‌ی شروع رسید؛ ${previousPosition > index ? '$۲۰۰ جایزه گرفت!' : 'سفر تازه آغاز شد!'}`);
+						break;
+					case 'tax':
+						addMoney(player, -space.amount, `پرداخت ${space.name}`);
+						if (player.bankrupt) {
+							if (state.phase === 'ended') render();
+							else finishLanding(player);
+							return;
+						}
+						setMessage(`${player.name} ${formatMoney(space.amount)} ${space.name} پرداخت کرد.`);
+						break;
+					case 'chance':
+						drawChance(player);
+						break;
+					case 'goto-jail':
+						player.position = 8;
+						player.jailed = true;
+						setMessage(`${player.name} به زندان رفت و یک نوبت استراحت می‌کند.`);
+						log(`${player.name} به زندان رفت.`);
+						break;
+					case 'jail':
+						setMessage(`${player.name} فقط به ملاقات زندان آمده؛ اتفاقی نمی‌افتد.`);
+						break;
+					default:
+						setMessage(`${player.name} به ${space.name} رسید.`);
+				}
+				finishLanding(player);
+			}
+
+			function finishLanding(player) {
+				if (state.phase === 'ended') {
+					render();
+					return;
+				}
+				state.offeredProperty = null;
+				state.phase = 'end';
+				render();
+				scheduleAIAction();
+			}
+
+			function movePlayer(player, steps) {
+				const start = player.position;
+				if (start + steps >= spaces.length) {
+					addMoney(player, 200, 'عبور از خانه‌ی شروع');
+					if (player.id === 'human') awardCoins(25, 'پاداش عبور از شروع');
+					showToast(`${player.name} از شروع گذشت؛ $۲۰۰ جایزه گرفت!`);
+					playSound('start');
+				}
+				setMessage(`${player.name} در مسیر سفر است...`);
+				let moved = 0;
+				const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+				const stepDelay = reducedMotion ? 25 : 260;
+				const advance = () => {
+					if (moved >= steps) {
+						movingPlayerId = null;
+						renderBoard();
+						resolveLanding(player, start);
+						return;
+					}
+					player.position = (player.position + 1) % spaces.length;
+					moved += 1;
+					movingPlayerId = player.id;
+					playSound('step');
+					renderBoard();
+					renderPlayers();
+					window.setTimeout(advance, stepDelay);
+				};
+				window.setTimeout(advance, reducedMotion ? 0 : 100);
+			}
+
+			function scheduleAIAction(delay = 650) {
+				window.clearTimeout(aiActionTimer);
+				const player = currentPlayer();
+				if (!player.isAI || state.phase === 'ended') return;
+				const playerId = player.id;
+				aiActionTimer = window.setTimeout(() => {
+					if (currentPlayer().id !== playerId || !currentPlayer().isAI) return;
+					if (state.phase === 'buy') {
+						const property = spaces[state.offeredProperty];
+						if (property && player.money >= property.price + 100) buyProperty(true);
+						else skipPurchase(true);
+						return;
+					}
+					if (state.phase === 'end') {
+						endTurn(true);
+						return;
+					}
+					if (state.phase === 'roll') {
+						const buildableProperty = player.properties.find((index) => canBuildHouse(player, index) && player.money >= houseCosts[spaces[index].group] + 120);
+						if (buildableProperty !== undefined) {
+							buildHouse(buildableProperty);
+							scheduleAIAction(450);
+						} else {
+							rollDice(true);
+						}
+					}
+				}, delay);
+			}
+
+			function rollDice(isAutomated = false) {
+				if (state.phase !== 'roll' || currentPlayer().isAI !== isAutomated) return;
+				state.started = true;
+				playSound('dice');
+				const player = currentPlayer();
+				if (player.jailed) {
+					player.jailed = false;
+					state.phase = 'moving';
+					setMessage(`${player.name} این نوبت در زندان می‌ماند و بعد آزاد می‌شود.`);
+					log(`${player.name} یک نوبت در زندان ماند.`);
+					render();
+					window.setTimeout(() => endTurn(isAutomated), 850);
+					return;
+				}
+				state.phase = 'moving';
+				rollButton.disabled = true;
+				diceElement.classList.add('rolling');
+				let ticks = 0;
+				const rollTimer = window.setInterval(() => {
+					const roll = Math.ceil(Math.random() * 6);
+					setDiceFace(roll);
+					ticks += 1;
+					if (ticks < 7) return;
+					window.clearInterval(rollTimer);
+					diceElement.classList.remove('rolling');
+					const total = Math.ceil(Math.random() * 6);
+					state.lastRoll = total;
+					setDiceFace(total);
+					document.getElementById('dice-total').textContent = fa.format(total);
+					log(`${player.name} یک تاس انداخت: ${fa.format(total)}.`);
+
+					setMessage(`${player.name} ${fa.format(total)} خانه حرکت می‌کند...`);
+					movePlayer(player, total);
+				}, 75);
+			}
+
+			function endTurn(isAutomated = false) {
+				if (state.phase === 'ended' || currentPlayer().isAI !== isAutomated) return;
+				playSound('turn');
+				const previousActive = state.active;
+				let nextActive = (state.active + 1) % players.length;
+				while (players[nextActive].bankrupt) nextActive = (nextActive + 1) % players.length;
+				state.active = nextActive;
+				if (state.active <= previousActive) state.round += 1;
+				state.phase = 'roll';
+				state.lastRoll = 1;
+				state.offeredProperty = null;
+				setMessage(`نوبت ${currentPlayer().name} است؛ تاس را بینداز!`);
+				render();
+				scheduleAIAction();
+			}
+
+			function buyProperty(isAutomated = false) {
+				if (state.phase !== 'buy' || state.offeredProperty === null || currentPlayer().isAI !== isAutomated) return;
+				const player = currentPlayer();
+				const index = state.offeredProperty;
+				const property = spaces[index];
+				if (player.money < property.price) {
+					playSound('error');
+					showToast('موجودی برای خرید این شهر کافی نیست.');
+					return;
+				}
+				player.money -= property.price;
+				player.properties.push(index);
+				playSound('buy');
+				log(`${player.name} شهر ${property.name} را به قیمت ${formatMoney(property.price)} خرید.`);
+				showToast(`🏙️ ${property.name} مال تو شد!`, true);
+				setMessage(`${player.name} ${property.name} را خرید؛ اجاره‌ی پایه ${formatMoney(property.rent)} است.`);
+				state.phase = 'end';
+				state.offeredProperty = null;
+				render();
+				highlightDealSpace(index);
+				scheduleAIAction();
+			}
+
+			function skipPurchase(isAutomated = false) {
+				if (state.phase !== 'buy' || currentPlayer().isAI !== isAutomated) return;
+				playSound('click');
+				const property = spaces[state.offeredProperty];
+				log(`${currentPlayer().name} از خرید ${property.name} گذشت.`);
+				setMessage(`از خرید ${property.name} گذشتی. شاید دفعه‌ی بعد!`);
+				state.phase = 'end';
+				state.offeredProperty = null;
+				render();
+				scheduleAIAction();
+			}
+
+			function resetGame() {
+				window.clearTimeout(aiActionTimer);
+				players.forEach((player) => {
+					player.money = 800;
+					player.position = 0;
+					player.properties = [];
+					player.houses = {};
+					player.jailed = false;
+					player.bankrupt = false;
+				});
+				state.active = 0;
+				state.round = 1;
+				state.phase = 'roll';
+				state.started = false;
+				state.lastRoll = 1;
+				state.offeredProperty = null;
+				state.dealSpaceIndex = null;
+				window.clearTimeout(dealHighlightTimer);
+				state.winner = null;
+				state.lastSpace = null;
+				walletAmount.textContent = formatMoney(800);
+				playSound('start');
+				logList.replaceChildren();
+				setDiceFace(1);
+				diceElement.classList.remove('rolling');
+				document.getElementById('dice-total').textContent = '—';
+				log('بازی تازه شروع شد! از خانه‌ی شروع به سفر برو.');
+				setMessage('تاس را بینداز و سفر را شروع کن!');
+				render();
+			}
+
+			function openLanding() {
+				window.clearTimeout(aiActionTimer);
+				landingContinueButton.hidden = gameApp.hidden;
+				landingScreen.hidden = false;
+				renderCosmeticStore();
+			}
+
+			function startAIMatch() {
+				window.clearTimeout(aiActionTimer);
+				players.forEach((player, index) => {
+					player.isAI = index > 0;
+					player.name = index === 0 ? player.name : `هوش مصنوعی ${fa.format(index)}`;
+					player.role = index === 0 ? 'بازیکن اول' : 'هوش مصنوعی';
+				});
+				gameApp.hidden = false;
+				document.getElementById('wallet-hud').hidden = false;
+				landingScreen.hidden = true;
+				resetGame();
+			}
+
+			function continueGame() {
+				landingScreen.hidden = true;
+				gameApp.hidden = false;
+				document.getElementById('wallet-hud').hidden = false;
+				scheduleAIAction();
+			}
+
+			rollButton.addEventListener('click', () => rollDice());
+			soundToggle.addEventListener('click', () => setSoundEnabled(!soundEnabled));
+			document.getElementById('skin-open-button').addEventListener('click', () => {
+				playSound('click');
+				openLanding();
+			});
+			document.getElementById('play-ai-button').addEventListener('click', () => {
+				if (!usernameLocked) {
+					profileDialog.showModal();
+					usernameInput.focus();
+					return;
+				}
+				startAIMatch();
+			});
+			document.getElementById('landing-continue-button').addEventListener('click', continueGame);
+			document.getElementById('token-kind-tab').addEventListener('click', () => {
+				cosmeticKind = 'token';
+				renderCosmeticStore();
+			});
+			document.getElementById('dice-kind-tab').addEventListener('click', () => {
+				cosmeticKind = 'dice';
+				renderCosmeticStore();
+			});
+			['play-friends-button', 'play-random-button'].forEach((id) => {
+				document.getElementById(id).addEventListener('click', () => {
+					document.querySelector('.online-roadmap').open = true;
+					showToast('اتصال سرور آنلاین هنوز پیکربندی نشده است.');
+				});
+			});
+			document.getElementById('return-menu-button').addEventListener('click', openLanding);
+			const helpDialog = document.getElementById('help-dialog');
+			document.getElementById('help-open-button').addEventListener('click', () => helpDialog.showModal());
+			document.getElementById('help-close-button').addEventListener('click', () => helpDialog.close());
+			helpDialog.addEventListener('click', (event) => {
+				if (event.target === helpDialog) helpDialog.close();
+			});
+			document.getElementById('property-close-button').addEventListener('click', () => {
+				playSound('click');
+				propertyDialog.close();
+			});
+			propertyDialog.addEventListener('click', (event) => {
+				if (event.target === propertyDialog) propertyDialog.close();
+			});
+			document.getElementById('transfer-open-button').addEventListener('click', () => {
+				playSound('click');
+				const sender = currentPlayer();
+				populatePlayerOptions(transferRecipient, sender, players.find((player) => player.id !== sender.id && !player.bankrupt));
+				document.getElementById('transfer-balance').textContent = formatMoney(sender.money);
+				transferAmountInput.max = String(sender.money);
+				transferAmountInput.value = String(Math.min(100, sender.money));
+				updateTransferSummary();
+				transferDialog.showModal();
+			});
+			document.getElementById('transfer-cancel-button').addEventListener('click', () => transferDialog.close());
+			transferDialog.addEventListener('click', (event) => {
+				if (event.target === transferDialog) transferDialog.close();
+			});
+			transferAmountInput.addEventListener('input', updateTransferSummary);
+			transferRecipient.addEventListener('change', updateTransferSummary);
+			transferForm.addEventListener('submit', (event) => {
+				event.preventDefault();
+				if (!transferForm.reportValidity()) return;
+				if (transferMoney(Number(transferAmountInput.value))) transferDialog.close();
+			});
+			document.getElementById('trade-open-button').addEventListener('click', () => {
+				playSound('click');
+				const activePlayer = currentPlayer();
+				const otherPlayers = players.filter((player) => player.id !== activePlayer.id && !player.bankrupt);
+				const preferredPlayer = otherPlayers.find((player) => player.properties.length > 0) || otherPlayers[0];
+				populatePlayerOptions(tradePlayer, activePlayer, preferredPlayer);
+				const opponent = selectedTradePlayer();
+				tradeDirection.value = opponent?.properties.length > 0 || activePlayer.properties.length === 0 ? 'buy' : 'sell';
+				populateTradeProperties(true);
+				tradeDialog.showModal();
+			});
+			document.getElementById('trade-cancel-button').addEventListener('click', () => tradeDialog.close());
+			tradeDialog.addEventListener('click', (event) => {
+				if (event.target === tradeDialog) tradeDialog.close();
+			});
+			tradeDirection.addEventListener('change', () => populateTradeProperties(true));
+			tradePlayer.addEventListener('change', () => populateTradeProperties(true));
+			tradeProperty.addEventListener('change', () => populateTradeProperties(true));
+			tradeAmountInput.addEventListener('input', updateTradeSummary);
+			tradeForm.addEventListener('submit', (event) => {
+				event.preventDefault();
+				if (!tradeForm.reportValidity()) return;
+				submitPropertyTrade(Number(tradeProperty.value), Number(tradeAmountInput.value), tradeDirection.value);
+			});
+			themeButtons.dark.addEventListener('click', () => setTheme('dark'));
+			themeButtons.light.addEventListener('click', () => setTheme('light'));
+			buyButton.addEventListener('click', () => buyProperty());
+			document.getElementById('build-house-button').addEventListener('click', () => {
+				const index = Number(propertyDialog.dataset.spaceIndex);
+				if (Number.isInteger(index)) buildHouse(index);
+			});
+			skipButton.addEventListener('click', () => skipPurchase());
+			endButton.addEventListener('click', () => endTurn());
+			restartButton.addEventListener('click', resetGame);
+			profileOpenButton.addEventListener('click', () => {
+				if (usernameLocked) {
+					showToast('نام کاربری روی این مرورگر ثبت شده و قابل تغییر نیست.');
+					return;
+				}
+				usernameInput.value = '';
+				usernameInput.setCustomValidity('');
+				profileDialog.showModal();
+			});
+			document.getElementById('profile-cancel-button').addEventListener('click', () => profileDialog.close());
+			profileForm.addEventListener('submit', (event) => {
+				event.preventDefault();
+				if (usernameLocked) return;
+				const username = usernameInput.value.trim();
+				usernameInput.setCustomValidity(username.length >= 2 ? '' : 'نام کاربری باید دست‌کم ۲ نویسه داشته باشد.');
+				if (!profileForm.reportValidity()) return;
+				try {
+					window.localStorage.setItem(usernameStorageKey, JSON.stringify({ username }));
+				} catch (error) {
+					showToast('ذخیره‌ی نام کاربری در این مرورگر ممکن نشد؛ فضای ذخیره‌سازی را بررسی کن.');
+					return;
+				}
+				players[0].name = username;
+				usernameLocked = true;
+				profileOpenButton.textContent = 'نام کاربری ثبت شد';
+				profileOpenButton.disabled = true;
+				render();
+				profileDialog.close();
+				showToast('نام کاربری برای این مرورگر ذخیره شد و فقط با پاک‌کردن داده‌های مرورگر حذف می‌شود.');
+			});
+
+			log('خوش اومدی! چهار بازیکن آماده‌اند؛ شهرها را بخر و برای پیروزی رقابت کن.');
+			setDiceFace(1);
+			render();
+			renderCosmeticStore();
+			if (usernameLocked) {
+				profileOpenButton.textContent = 'نام کاربری ثبت شد';
+				profileOpenButton.disabled = true;
+			}
+			if (profileStorageError) showToast('نام کاربری از ذخیره‌سازی خوانده نشد؛ محدودیت مرورگر را بررسی کن.');
+			if (!usernameLocked) {
+				usernameInput.value = '';
+				profileDialog.showModal();
+			}
+			if (cosmeticStorageError) showToast('ذخیره‌سازی فروشگاه در دسترس نیست؛ تغییرات ممکن است با بستن صفحه از بین بروند.');
+		})();
+	</script>
+</body>
+</html>
